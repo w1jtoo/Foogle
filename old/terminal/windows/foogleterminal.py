@@ -7,13 +7,16 @@ import cmd
 # TODO construct the app sketch (only the methods and funcs)
 
 curses.initscr()
-win = curses.newwin(30, 50, 0, 0)
+win = curses.newwin(30, 50, 3, 3)
+win.bkgdset(12, 4)
 curses.noecho()
 
 
 def fill_in_the_background():
     for y in range(0, 29):
         for x in range(0, 49):
+            if x in range(11, 18) and y == 25:
+                continue
             win.addch(y, x, 176)
 
 
@@ -27,9 +30,9 @@ def get_console_size() -> (int, int):
 
 STDOUT = -11
 
-hdl = windll.kernel32.GetStdHandle(STDOUT)
-rect = SMALL_RECT(0, 50, 50, 80)  # (left, top, right, bottom)
-windll.kernel32.SetConsoleWindowInfo(hdl, True, byref(rect))
+# hdl = windll.kernel32.GetStdHandle(STDOUT)
+# rect = SMALL_RECT(0, 50, 50, 80)  # (left, top, right, bottom)
+# windll.kernel32.SetConsoleWindowInfo(hdl, True, byref(rect))
 # end
 
 result = ''
@@ -54,6 +57,10 @@ while 1:
             continue
         result += chr(pressed_char)
         win.addch(pressed_char)
+
+    win.move(5, 5)
+    win.cursyncup()
+    curses.setsyx(15, 15)
 
 print(result)
 
