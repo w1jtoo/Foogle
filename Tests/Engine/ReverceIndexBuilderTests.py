@@ -16,7 +16,7 @@ def set_up():
 def NOtest_index_empty_file():
     with tempfile.NamedTemporaryFile() as f:
         b = ReverceIndexBuilder([f.name])
-        result = b.builder_init()
+        result = b._builder_init()
         assert f in result
 
 
@@ -25,3 +25,11 @@ def test_find_from_C_file():
     b = ReverceIndexBuilder([d])
     b.compile()
     assert "hello" in b.index
+
+def test_query():
+    d = os.getcwd() + DIR + "\\Hello World.txt"
+    b = ReverceIndexBuilder([d])
+    b.compile()
+    assert d  in b.get_static_query("Hello")
+
+
