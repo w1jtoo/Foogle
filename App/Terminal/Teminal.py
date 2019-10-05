@@ -1,7 +1,7 @@
 import threading
 
-class Terminal(object): 
 
+class Terminal(object):
     def __init__(self, *args, **kwargs):
         self.objects = []
 

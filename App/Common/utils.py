@@ -10,7 +10,7 @@ def find_paths(directory: str) -> dict:
     """ Return dict consists from pairs: (dir, file),
         where file is foofile.
     """
-    tpaths = glob.glob(directory + r'\**', recursive=True)
+    tpaths = glob.glob(directory + r"\**", recursive=True)
 
     return tpaths
 

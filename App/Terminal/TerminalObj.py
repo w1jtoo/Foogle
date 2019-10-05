@@ -1,9 +1,8 @@
 import abc
 
-class TerminalObj(object, metaclass=abc.ABCMeta):
 
-    def __init__(self, startX: int , startY: int,\
-        endX: int, endY: int):
+class TerminalObj(object, metaclass=abc.ABCMeta):
+    def __init__(self, startX: int, startY: int, endX: int, endY: int):
         pass
 
     @property

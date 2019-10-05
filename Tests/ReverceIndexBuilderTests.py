@@ -4,7 +4,7 @@ import os
 
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
 
-DIR = '\\TESTDIRfiles'
+DIR = "\\TESTDIRfiles"
 
 
 def set_up():
@@ -26,10 +26,9 @@ def test_find_from_C_file():
     b.compile()
     assert "hello" in b.index
 
+
 def test_query():
     d = os.getcwd() + DIR + "\\Hello World.txt"
     b = ReverceIndexBuilder([d])
     b.compile()
-    assert d  in b.get_static_query("Hello")
-
-
+    assert d in b.get_static_query("Hello")

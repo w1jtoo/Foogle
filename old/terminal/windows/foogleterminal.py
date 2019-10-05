@@ -35,10 +35,10 @@ STDOUT = -11
 # windll.kernel32.SetConsoleWindowInfo(hdl, True, byref(rect))
 # end
 
-result = ''
+result = ""
 curses.start_color()
 curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_BLUE)
-win.bkgd(' ', curses.color_pair(1))
+win.bkgd(" ", curses.color_pair(1))
 
 while 1:
     fill_in_the_background()
