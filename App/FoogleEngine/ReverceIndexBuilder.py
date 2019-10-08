@@ -1,17 +1,24 @@
 import os
 import re
 import math
+import sqlite3
+from chardet import UniversalDetector
 
 CLEANING_PATTERN = re.compile(r"[\W_]+")
 
+
 class ReverceIndexBuilder:
-    def __init__(self, files: list):
+    def __init__(self, files: list, base_file_name: str):
+        # self._connection = sqlite3.connect(base_file_name)
         self.files = files
         self.tf = {}
         self.df = {}
         self.idf = {}
         self.magnitudes = {}
         self.vectors = {}
+
+    def set_directory(self, connection):
+        self._connection = connection
 
     def idf_func(self, N, N_t):
         return math.log(N / N_t) if N_t != 0 else 0

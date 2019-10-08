@@ -13,9 +13,3 @@ def find_paths(directory: str) -> dict:
     tpaths = glob.glob(directory + r"\**", recursive=True)
 
     return tpaths
-
-
-if __name__ == "__main__":
-
-    cwd = getcwd()
-    print(find_paths(cwd))
