@@ -16,6 +16,7 @@ class Application:
         self.container = AppContainer()
         self.parser = argparse.ArgumentParser(description="Foogle")
 
+        # TODO Subparser compile and query and add_parser
         # self.terminal = Terminal(self.container)
         self.parser = argparse.ArgumentParser(
             description="Pretends to be git", usage="Foogle --query [<dir>]"
@@ -44,14 +45,17 @@ class Application:
         self._index = ReverceIndexBuilder(
             self.get_files(directory), self.get_config().get_date_base_name()
         )
-        self._index.compile()
-        print(
-            self._index.df,
-            self._index.magnitudes,
-            self._index.idf,
-            self._index.tf,
-            sep="\n",
-        )
+        self._index._builder_init()
+        self._index.set_term_frequency()
+        self._index.set_inverce_frequency()
+        print(self._index.get_static_query("hello"))
+        # print(
+        #     self._index.df,
+        #     self._index.magnitudes,
+        #     self._index.idf,
+        #     self._index.tf,
+        #     sep="\n",
+        # )
         print("Base was compiled successfully")
 
     def get_files(self, fpath: str) -> list:
@@ -92,4 +96,5 @@ class Application:
 
 
 if __name__ == "__main__":
+    # TODO replace sqlite queries to static class, less coherence
     Application()

@@ -4,4 +4,4 @@ class Config:
         super().__init__(*args, **kwargs)
 
     def get_date_base_name(self) -> str:
-        return "foogletempbase.bd"
+        return "foogletempbase.db"

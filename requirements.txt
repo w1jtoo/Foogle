@@ -3,5 +3,6 @@
 #
 ###### Requirements without Version Specifiers ######
 argparse
+sqlite3
 #
 #
