@@ -42,13 +42,14 @@ class Application:
 
     def compile(self, directory: str) -> None:
         print("Start of reverce index building...")
+        from App.Common.DateBase.BaseProvaider import DateBase
+        
+        
         self._index = ReverceIndexBuilder(
             self.get_files(directory), self.get_config().get_date_base_name()
         )
-        self._index._builder_init()
-        self._index.set_term_frequency()
-        self._index.set_inverce_frequency()
-        print(self._index.get_static_query("hello"))
+        self._index.compile()
+        print(self._index.get_static_query("world hello"))
         # print(
         #     self._index.df,
         #     self._index.magnitudes,
