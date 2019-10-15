@@ -9,6 +9,7 @@ class DateBase(enum.Enum):
     INDEX = 1
     TF = 2
     IDF = 3
+    ENCODING = 4
 
     def __str__(self):
         return str(self.name).lower() + "_base"
@@ -68,6 +69,22 @@ class BaseProvider:
         self._cursor.execute(f"CREATE TABLE {DateBase.IDF} ( term text, idf real )")
         self._connection.commit()
 
+    def initalize_file_encoding(self) -> None:
+        """ Initialize base with file and it's encoding  
+        View:
+        | id | path | encoding | 
+        """
+        self._cursor.execute(
+            f"CREATE TABLE {DateBase.ENCODING} ( id INTEGER PRIMARY KEY AUTOINCREMENT, path text, encoding text )"
+        )
+        self._connection.commit()
+
+    def add_encoding_file(self, path: str, encoding: str) -> None:
+        self._cursor.execute(
+            f"INSERT INTO {DateBase.ENCODING} (path, encoding) VALUES ( '{path}', '{encoding}')"
+        )
+        self._connection.commit()
+
     def get_terms(self) -> list:
         """ Should return pair of word and path"""
         self._cursor.execute(f"SELECT DISTINCT word, path FROM {DateBase.INDEX}")
@@ -109,7 +126,7 @@ class BaseProvider:
         for value in values:
             if isinstance(value, str):
                 result.append(f"'{value}'")
-            elif str(value).replace('.','',1).isdigit():
+            elif str(value).replace(".", "", 1).isdigit():
                 result.append(str(value))
         # print(f"INSERT INTO {base} VALUES ({', '.join(result)})")
         self._cursor.execute(f"INSERT INTO {base} VALUES ({', '.join(result)})")

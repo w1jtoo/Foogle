@@ -9,7 +9,7 @@ DIR = "\\TESTDIRfiles"
 
 
 def test_false():
-    assert 0, "it's true"
+    assert 0, "it's false"
 
 
 def test_true():

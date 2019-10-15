@@ -43,11 +43,18 @@ class Application:
     def compile(self, directory: str) -> None:
         print("Start of reverce index building...")
         from App.Common.DateBase.BaseProvaider import DateBase
-        
-        
+
         self._index = ReverceIndexBuilder(
             self.get_files(directory), self.get_config().get_date_base_name()
         )
+
+
+        self._index.base_provider.drop_table(DateBase.ENCODING)
+        self._index.base_provider.initalize_file_encoding()
+        print(self.get_files(directory))
+        for f in self.get_files(directory):
+            self._index.base_provider.add_encoding_file(f, self.detect_encoding(f))
+
         self._index.compile()
         print(self._index.get_static_query("world hello"))
         # print(
@@ -83,7 +90,7 @@ class Application:
 
     def detect_encoding(self, file_name: str) -> str:
         u = UniversalDetector()
-        encoding = "UTF8"
+        encoding = "NULL"
         with open(file_name, "rb") as f:
             for line in f.readlines():
                 u.feed(line)
@@ -91,8 +98,7 @@ class Application:
         if u.result["encoding"]:
             encoding = u.result["encoding"]
         else:
-            self.parser.error("Wrong encoding")
-
+            print(f"Can't detect file encoding - {file_name}")
         return encoding
 
 
