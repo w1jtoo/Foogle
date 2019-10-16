@@ -3,15 +3,15 @@ import re
 import math
 import sqlite3
 from chardet import UniversalDetector
-from App.Common.DateBase.BaseProvaider import BaseProvider, DateBase
+from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
 
 
 CLEANING_PATTERN = re.compile(r"[\W_]+")
 
 
 class ReverceIndexBuilder:
-    def __init__(self, files: list, base_file_name: str):
-        self.base_provider = BaseProvider(base_file_name)
+    def __init__(self, files: list, base_provider: BaseProvider):
+        self.base_provider = base_provider
         self.files = files
 
     def compile(self):
@@ -25,7 +25,12 @@ class ReverceIndexBuilder:
 
         for fname in self.files:
             position = 0
-            f = open(fname, "r")
+            encoding = self.base_provider.get_encoding(fname)
+            if encoding == "NULL":
+                print(f"Can't load file encoding: '{fname}'")
+                continue
+
+            f = open(fname, "r", encoding=encoding)
             while 1:
                 line = f.readline().lower()
                 if not line:
@@ -81,7 +86,6 @@ class ReverceIndexBuilder:
                 where=f"word = '{term}'",
             )
 
-            # idf(term) = log( len(files) / count of docs with term )
             self.base_provider.insert_into(
                 DateBase.IDF, term, math.log(len(self.files) / document_count)
             )
@@ -93,12 +97,6 @@ class ReverceIndexBuilder:
             select_params="position",
             where=f" word = '{word}' AND path = '{path}' ",
         )
-        # cursor.execute(
-        #     "SELECT position FROM {} \
-        #          WHERE word = '{}' AND path = '{}' ".format(
-        #         INDEX_BASE_NAME, word, path
-        #     )
-        # )
         return [path[0] for path in positions]
 
     def _inialize_stats(self):
@@ -112,7 +110,6 @@ class ReverceIndexBuilder:
         string = pattern.sub(" ", string)
         lists, result = [], []
 
-        # cursor.execute("SELECT DISTINCT word FROM {}".format(INDEX_BASE_NAME))
         terms = [
             term[0]
             for term in self.base_provider.select_distinct(
@@ -131,11 +128,9 @@ class ReverceIndexBuilder:
                 lists.append([*[path[0] for path in paths]])
             else:
                 lists.append([])
-        print(lists)
 
         # CAN BE FASTER
         setted = set(lists[0]).intersection(*lists)
-        print("set = \n" + str(setted))
         for filename in setted:
             temp_list = []
             for word in string.split():
@@ -147,19 +142,11 @@ class ReverceIndexBuilder:
                 )
 
                 temp_list.append([w[0] / len(word) for w in t])
-            print("temp:")
-            print(temp_list)
             for i in range(len(temp_list)):
                 for ind in range(len(temp_list[i])):
-                    print(f"temp_list[{i}][{ind}] -= {i}")
                     temp_list[i][ind] -= i
             if set(temp_list[0]).intersection(*temp_list):
                 result.append(filename)
-        print("\n")
-        print(result)
-        print("\n")
-        print(string)
-        print("\n")
         return self._get_rank(result, string)
 
     def _term_total_freq(self, terms, query):
@@ -211,7 +198,6 @@ class ReverceIndexBuilder:
         for f in fnames:
             vdoc = [0] * len(terms)
             for ind, term in enumerate(terms):
-                print(str(ind) + term)
                 vdoc[ind] = self.get_term_frequency(
                     f, term
                 ) * self.get_inverce_term_frequency(term)
@@ -252,14 +238,11 @@ class ReverceIndexBuilder:
 
         terms = self.terms()
         vectors = self._make_vectors_for_query(result_files, terms=terms)
-        print(vectors)
         queryVec = self._query_vecor(query, terms=terms)
-        print(queryVec)
         results = [
             [self._product(vectors[result], queryVec), result]
             for result in result_files
         ]
-        print(results)
         results.sort(key=lambda x: x[0])
         results = [x[1] for x in results]
         return results

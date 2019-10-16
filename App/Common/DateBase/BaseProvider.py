@@ -26,18 +26,8 @@ class BaseProvider:
         self._connection = sqlite3.connect(db_name)
         self._cursor = self._connection.cursor()
 
-        # drop to rewrite it
-        self.drop_table(DateBase.IDF)
-        self.drop_table(DateBase.INDEX)
-        self.drop_table(DateBase.TF)
-
-        # init
-        self.initialize_index_base()
-        self.initalize_tf_base()
-        self.initalize_idf_base()
-
     def drop_table(self, base: DateBase) -> None:
-        self._cursor.execute(f"DROP TABLE {base} ")
+        self._cursor.execute(f"DROP TABLE IF EXISTS {base} ")
 
     def initialize_index_base(self) -> None:
         """
@@ -96,7 +86,6 @@ class BaseProvider:
         query = f"SELECT COUNT({count_params}) FROM {base}"
         if where:
             query += f" WHERE {where}"
-        # print(query)
         self._cursor.execute(query)
         return self._cursor.fetchone()[0]
 
@@ -104,7 +93,6 @@ class BaseProvider:
         query = f"SELECT ({select_params}) FROM {base}"
         if where:
             query += f" WHERE {where}"
-        # print(query)
         self._cursor.execute(query)
         return self._cursor.fetchall()
 
@@ -116,7 +104,6 @@ class BaseProvider:
 
         if where:
             query += f" WHERE {where}"
-        # print(query)
         self._cursor.execute(query)
         return self._cursor.fetchone()
 
@@ -128,7 +115,6 @@ class BaseProvider:
                 result.append(f"'{value}'")
             elif str(value).replace(".", "", 1).isdigit():
                 result.append(str(value))
-        # print(f"INSERT INTO {base} VALUES ({', '.join(result)})")
         self._cursor.execute(f"INSERT INTO {base} VALUES ({', '.join(result)})")
         self._connection.commit()
 
@@ -138,7 +124,18 @@ class BaseProvider:
         query = f"SELECT DISTINCT {distinct_params} FROM {date_base}"
         if where:
             query += f" WHERE {where}"
-        # print(query)
         self._cursor.execute(query)
 
         return self._cursor.fetchall()
+
+    def get_encoding(self, path: str) -> str:
+        encoding = self.select_one(
+            DateBase.ENCODING, where=f"path = '{path}'", select_params="encoding"
+        )
+        return encoding[0]
+
+    def drop_tables(self) -> None:
+        self.drop_table(DateBase.ENCODING)
+        self.drop_table(DateBase.IDF)
+        self.drop_table(DateBase.TF)
+        self.drop_table(DateBase.INDEX)

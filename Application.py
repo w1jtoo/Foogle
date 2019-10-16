@@ -5,6 +5,7 @@ import argparse
 import sys
 import os.path
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
+from App.Common.DateBase.BaseProvider import BaseProvider
 from chardet import UniversalDetector
 import sqlite3
 
@@ -13,7 +14,8 @@ import sqlite3
 
 class Application:
     def __init__(self):
-        self.container = AppContainer()
+        self.base_provider = BaseProvider(self.get_config().get_date_base_name())
+
         self.parser = argparse.ArgumentParser(description="Foogle")
 
         # TODO Subparser compile and query and add_parser
@@ -42,29 +44,27 @@ class Application:
 
     def compile(self, directory: str) -> None:
         print("Start of reverce index building...")
-        from App.Common.DateBase.BaseProvaider import DateBase
 
         self._index = ReverceIndexBuilder(
-            self.get_files(directory), self.get_config().get_date_base_name()
+            self.get_files(directory), self.base_provider
         )
+        self.base_provider.drop_tables()
 
+        self.base_provider.initalize_file_encoding()
+        self.base_provider.initalize_idf_base()
+        self.base_provider.initalize_tf_base()
+        self.base_provider.initialize_index_base()
 
-        self._index.base_provider.drop_table(DateBase.ENCODING)
-        self._index.base_provider.initalize_file_encoding()
-        print(self.get_files(directory))
-        for f in self.get_files(directory):
-            self._index.base_provider.add_encoding_file(f, self.detect_encoding(f))
-
+        self.fill_in_encoding_base(directory)
         self._index.compile()
-        print(self._index.get_static_query("world hello"))
-        # print(
-        #     self._index.df,
-        #     self._index.magnitudes,
-        #     self._index.idf,
-        #     self._index.tf,
-        #     sep="\n",
-        # )
+
         print("Base was compiled successfully")
+
+    def fill_in_encoding_base(self, directory: str) -> None:
+        for path in self.get_files(directory):
+            self._index.base_provider.add_encoding_file(
+                path, self.detect_encoding(path)
+            )
 
     def get_files(self, fpath: str) -> list:
         result = []
@@ -81,12 +81,12 @@ class Application:
 
         print("Loading answer...")
         self._index = ReverceIndexBuilder(
-            directory, self.get_config().get_date_base_name()
+            self.get_files(directory), self.base_provider
         )
         if not self._index:
             self.parser.error("You should compile index first.")
 
-        self._index.get_static_query(query)
+        print("Result files:\n" + "\n".join(self._index.get_static_query(query)))
 
     def detect_encoding(self, file_name: str) -> str:
         u = UniversalDetector()
@@ -98,7 +98,7 @@ class Application:
         if u.result["encoding"]:
             encoding = u.result["encoding"]
         else:
-            print(f"Can't detect file encoding - {file_name}")
+            print(f"Can't detect file encoding - '{file_name}'")
         return encoding
 
 
