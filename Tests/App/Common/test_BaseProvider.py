@@ -1,4 +1,4 @@
-from tests.TestUtils import DateBaseEntity
+from Tests.TestUtils import DateBaseEntity
 from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
 from App.Common.DateBase.SelectError import SelectError
 
