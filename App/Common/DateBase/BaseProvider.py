@@ -18,6 +18,7 @@ class DateBase(enum.Enum):
 
 
 class BaseProvider:
+    # TODO I should use Date Base normalization but nowdays it's to time expensive for me
     def __init__(self, db_name: str):
         """"""
         self._db_name = db_name
@@ -30,14 +31,14 @@ class BaseProvider:
 
     def initialize_index_base(self) -> None:
         """
-        Initialize dase where word, path, and position of word entry.
+        Initialize dase where word, path, position and id of word entry.
         
         View: 
-        | word | path | position |
+        | word | path | position | id |
         """
         self._cursor.execute(
             f" CREATE TABLE {DateBase.INDEX} \
-             ( word text, path text, position real ) "
+             ( word TEXT, path TEXT, position REAL, id INTEGER ) "
         )
         self._connection.commit()
 
@@ -48,7 +49,7 @@ class BaseProvider:
         | path | word | tf | 
         """
         self._cursor.execute(
-            f"CREATE TABLE {DateBase.TF} (path text, word text, tf real)"
+            f"CREATE TABLE {DateBase.TF} ( path text, word text, tf real )"
         )
         self._connection.commit()
 
@@ -56,9 +57,11 @@ class BaseProvider:
         """ Initialize dase word, path and it's tf.
 
         View:
-        | path | word | tf | 
+        | id | term | idf | 
         """
-        self._cursor.execute(f"CREATE TABLE {DateBase.IDF} ( term text, idf real )")
+        self._cursor.execute(
+            f"CREATE TABLE {DateBase.IDF} (id INTEGER PRIMARY KEY AUTOINCREMENT, term text, idf real)"
+        )
         self._connection.commit()
 
     def initalize_file_encoding(self) -> None:
@@ -68,7 +71,7 @@ class BaseProvider:
         | id | path | encoding | 
         """
         self._cursor.execute(
-            f"CREATE TABLE {DateBase.ENCODING} ( id INTEGER PRIMARY KEY AUTOINCREMENT, path text, encoding text )"
+            f"CREATE TABLE {DateBase.ENCODING} ( ID INTEGER PRIMARY KEY AUTOINCREMENT, path text, encoding text )"
         )
         self._connection.commit()
 
@@ -78,12 +81,13 @@ class BaseProvider:
         )
         self._connection.commit()
 
-    def get_terms_and_paths(self) -> list:
-        """ Should return pair of word and path"""
-        self._cursor.execute(f"SELECT DISTINCT word, path FROM {DateBase.INDEX}")
-        terms = self._cursor.fetchall()
+    def get_terms_paths_iterator(self) -> iter:
+        """ Returns iterator that iterable by pair of word and path"""
+        return TermsPathsItermator(self)
 
-        return terms
+    def get_terms_iterator(self) -> iter:
+        """ Returns iterator that iterable by words."""
+        return TermsItermator(self)
 
     def select_count(self, base: DateBase, where="", count_params="*") -> int:
         """ Select count of something in DateBase. Equivalent of SQL's SELECT COUNT...
@@ -156,12 +160,13 @@ class BaseProvider:
         if select_params == "*":
             query = f"SELECT * FROM {base}"
         else:
-            query = f"SELECT ({select_params}) FROM {base}"
+            query = f"SELECT {select_params} FROM {base}"
 
         if where:
             query += f" WHERE {where}"
+        # print(query)
         self._cursor.execute(query)
-        return self._cursor.fetchone() 
+        return self._cursor.fetchone()
 
     def insert_into(self, base: DateBase, *values) -> None:
         """ Insert into table values.
@@ -180,6 +185,13 @@ class BaseProvider:
                 result.append(f"'{value}'")
             elif str(value).replace(".", "", 1).isdigit():
                 result.append(str(value))
+
+        if base == DateBase.IDF:
+            self._cursor.execute(
+                f"INSERT INTO {base} (term, idf) VALUES ({', '.join(result)})"
+            )
+            self._connection.commit()
+            return
         self._cursor.execute(f"INSERT INTO {base} VALUES ({', '.join(result)})")
         self._connection.commit()
 
@@ -240,3 +252,46 @@ class BaseProvider:
         self.drop_table(DateBase.IDF)
         self.drop_table(DateBase.TF)
         self.drop_table(DateBase.INDEX)
+
+
+class TermsPathsItermator:
+    def __init__(self, provider: BaseProvider):
+        self._provider = provider
+
+    def __iter__(self):
+        self._counter = 0
+        return self
+
+    def __next__(self):
+        result = self._provider.select_one(
+            DateBase.INDEX,
+            where=f"id={self._counter}",
+            select_params=" word, path ",
+        )
+        if result:
+            self._counter += 1
+            return result
+        else:
+            raise StopIteration
+
+
+class TermsItermator:
+    def __init__(self, provider: BaseProvider):
+        self._provider = provider
+
+    def __iter__(self):
+        self._counter = 1
+        return self
+
+    def __len__(self):
+        return self._provider.select_count(DateBase.IDF)
+
+    def __next__(self):
+        result = self._provider.select_one(
+            DateBase.IDF, where=f"id={self._counter}", select_params="term"
+        )
+        if result:
+            self._counter += 1
+            return result[0]
+        else:
+            raise StopIteration

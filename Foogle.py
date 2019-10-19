@@ -9,8 +9,6 @@ from App.Common.DateBase.BaseProvider import BaseProvider
 from chardet import UniversalDetector
 import sqlite3
 
-# TODO ASK Max how to use this fcking argparser
-
 
 class Application:
     def __init__(self):

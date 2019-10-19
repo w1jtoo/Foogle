@@ -22,7 +22,7 @@ class ReverceIndexBuilder:
     def _builder_init(self):
         # there is some optimization
         # so we can do it in 2o(nl) instead of 3o(nl)
-
+        _id = 0
         for fname in self.files:
             position = 0
             encoding = self.base_provider.get_encoding(fname)
@@ -36,8 +36,16 @@ class ReverceIndexBuilder:
                 if not line:
                     break
                 for word in line.split(" "):
+                    _id -= (
+                        self.base_provider.select_count(
+                            DateBase.INDEX,
+                            where=f"word='{word}' AND path='{fname}'",
+                        )
+                        - 1
+                    )
+
                     self.base_provider.insert_into(
-                        DateBase.INDEX, word, fname, position
+                        DateBase.INDEX, word, fname, position, _id
                     )
                     position += len(word)
                 position += len(line)
@@ -45,7 +53,7 @@ class ReverceIndexBuilder:
 
     def set_term_frequency(self, terms=[]) -> None:
         if not terms:
-            terms = self.base_provider.get_terms_and_paths()
+            terms = self.base_provider.get_terms_iterator()
 
         for term, path in terms:
             count_of_term = self.base_provider.select_count(
@@ -100,9 +108,9 @@ class ReverceIndexBuilder:
         return [path[0] for path in positions]
 
     def _inialize_stats(self):
-        termins = self.base_provider.get_terms_and_paths()
+        terms = self.base_provider.get_terms_iterator()
         self.set_inverce_frequency()
-        self.set_term_frequency(terms=termins)
+        self.set_term_frequency(terms=terms)
 
     def get_static_query(self, string: str) -> list:
         string = string.lower()
@@ -149,14 +157,15 @@ class ReverceIndexBuilder:
                 result.append(filename)
         return self._get_rank(result, string)
 
-    def _term_total_freq(self, terms, query):
-        temp = [0] * len(terms)
-        for i, term in enumerate(terms):
+    def _term_total_freq(self, query):
+        temp = []
+        terms = self.base_provider.get_terms_iterator()
+        for term in terms:
             count = 0
             for word in query.split():
                 if word == term:
                     count += 1
-            temp[i] = count
+            temp.append(count)
         return temp
 
     def get_term_frequency(self, fname: str, term: str) -> int:
@@ -190,38 +199,37 @@ class ReverceIndexBuilder:
 
         return [term[0] for term in result]
 
-    def _make_vectors_for_query(self, fnames: str, terms=[]) -> dict:
+    def _make_vectors_for_query(self, fnames: str) -> dict:
 
         # cursor.execute("SELECT DISTINCT word FROM {}".format(INDEX_BASE_NAME))
-
+        terms = self.base_provider.get_terms_iterator()
         vecs = {}
         for f in fnames:
-            vdoc = [0] * len(terms)
-            for ind, term in enumerate(terms):
-                vdoc[ind] = self.get_term_frequency(
-                    f, term
-                ) * self.get_inverce_term_frequency(term)
+            vdoc = []
+            for term in terms:
+                vdoc.append(
+                    self.get_term_frequency(f, term)
+                    * self.get_inverce_term_frequency(term)
+                )
             vecs[f] = vdoc
         return vecs
 
-    def _query_vecor(self, query: str, terms=[]) -> list:
-
+    def _query_vecor(self, query: str) -> list:
+        terms = self.base_provider.get_terms_iterator()
         pattern = re.compile(r"[\W_]+")
         query = pattern.sub(" ", query)
-        queryls = query.split()
-        vquery = [0] * len(queryls)
-        index = 0
-        for _, word in enumerate(queryls):
-            vquery[index] = self._get_query_frequency(word, query)
-            index += 1
+        vquery = []
+        for word in query.split(' '):
+            vquery.append(self._get_query_frequency(word, query))
         queryidf = [self.get_inverce_term_frequency(word) for word in terms]
         magnitude = pow(sum(map(lambda x: x ** 2, vquery)), 0.5)
-        freq = self._term_total_freq(terms, query)
+        freq = self._term_total_freq(query)
         tf = [x / magnitude for x in freq]
+        # what the fuck is going on here?
         final = [tf[i] * queryidf[i] for i in range(len(terms))]
         return final
 
-    def _get_query_frequency(self, term, query):
+    def _get_query_frequency(self, term, query) -> int:
         count = 0
         for word in query.split():
             if word == term:
@@ -236,9 +244,8 @@ class ReverceIndexBuilder:
 
     def _get_rank(self, result_files, query) -> list:
 
-        terms = self.terms()
-        vectors = self._make_vectors_for_query(result_files, terms=terms)
-        queryVec = self._query_vecor(query, terms=terms)
+        vectors = self._make_vectors_for_query(result_files)
+        queryVec = self._query_vecor(query)
         results = [
             [self._product(vectors[result], queryVec), result]
             for result in result_files
