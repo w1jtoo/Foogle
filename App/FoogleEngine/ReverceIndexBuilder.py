@@ -45,7 +45,7 @@ class ReverceIndexBuilder:
 
     def set_term_frequency(self, terms=[]) -> None:
         if not terms:
-            terms = self.base_provider.get_terms()
+            terms = self.base_provider.get_terms_and_paths()
 
         for term, path in terms:
             count_of_term = self.base_provider.select_count(
@@ -100,7 +100,7 @@ class ReverceIndexBuilder:
         return [path[0] for path in positions]
 
     def _inialize_stats(self):
-        termins = self.base_provider.get_terms()
+        termins = self.base_provider.get_terms_and_paths()
         self.set_inverce_frequency()
         self.set_term_frequency(terms=termins)
 
@@ -212,7 +212,7 @@ class ReverceIndexBuilder:
         vquery = [0] * len(queryls)
         index = 0
         for _, word in enumerate(queryls):
-            vquery[index] = self.queryFreq(word, query)
+            vquery[index] = self._get_query_frequency(word, query)
             index += 1
         queryidf = [self.get_inverce_term_frequency(word) for word in terms]
         magnitude = pow(sum(map(lambda x: x ** 2, vquery)), 0.5)
@@ -221,7 +221,7 @@ class ReverceIndexBuilder:
         final = [tf[i] * queryidf[i] for i in range(len(terms))]
         return final
 
-    def queryFreq(self, term, query):
+    def _get_query_frequency(self, term, query):
         count = 0
         for word in query.split():
             if word == term:
