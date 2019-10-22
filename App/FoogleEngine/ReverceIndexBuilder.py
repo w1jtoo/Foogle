@@ -87,6 +87,7 @@ class ReverceIndexBuilder:
         # get unique term list
 
         for term in self.base_provider.get_terms_iterator():
+            # print(term)
             document_count = self.base_provider.select_count(
                 DateBase.INDEX,
                 count_params="DISTINCT path",

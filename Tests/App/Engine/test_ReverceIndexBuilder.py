@@ -14,7 +14,7 @@ import tempfile
 import os
 
 FILES_DIR = os.path.join(
-    "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env\\files"
+    "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env/files"
 )
 
 DATEBASE = os.path.join(
