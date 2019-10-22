@@ -9,6 +9,7 @@ from App.Common.DateBase.SelectError import SelectError
 import pytest
 
 BASE_NAME = "test_date_base.bs"
+NONEXISTENT_NAME = "bacelscat.bs"
 
 
 def test_DateBase_string_format():
@@ -56,8 +57,7 @@ def test_get_nonexistent_encoding():
         with BaseProvider(BASE_NAME) as bp:
             bp.initalize_file_encoding()
 
-            with pytest.raises(SelectError):
-                bp.get_encoding("word")
+            assert bp.get_encoding("word") == "UTF-8"
 
 
 def test_drop_table_tables():
@@ -95,6 +95,12 @@ def test_drop_table_nonexistent_table_should_not_raise_exeption():
             assert not bp._cursor.fetchall()
 
 
+def test_recompile():
+    with DateBaseEntity(BASE_NAME):
+        with BaseProvider(BASE_NAME) as bp:
+            bp.recompile()
+
+
 # def test_get_terms():
 #     with DateBaseEntity(BASE_NAME):
 #         with BaseProvider(BASE_NAME) as bp:
@@ -105,10 +111,10 @@ def test_drop_table_nonexistent_table_should_not_raise_exeption():
 
 
 values = [
-    ("vasya", "\\home.txt", 0, 0),
-    ("is", "\\home.txt", 1, 1),
-    ("a good", "\\home.txt", 2, 2),
-    ("boy", "\\home.txt", 3, 3),
+    ("vasya", "\\home.txt", 0, 1, 1),
+    ("is", "\\home.txt", 1, 2, 2),
+    ("a good", "\\home.txt", 2, 3, 3),
+    ("boy", "\\home.txt", 3, 4, 4),
 ]
 
 
@@ -159,7 +165,8 @@ def test_select_one():
                 "vasya",
                 "\\home.txt",
                 0,
-                0,
+                1,
+                1
             )
 
 
@@ -187,18 +194,20 @@ def test_terms_paths_iterator():
 
             excepted_terms = list(terms)
 
-            assert excepted_terms == [(value[0], value[1]) for value in values]
+            assert set(excepted_terms) == set(
+                [(value[0], value[1]) for value in values]
+            )
 
 
-values_idf = [("vasya", 0), ("is", 1), ("a good", 2.2), ("boy", 3.3)]
+
 
 
 def test_terms_iterator():
     with DateBaseEntity(BASE_NAME):
         with BaseProvider(BASE_NAME) as bp:
-            bp.initalize_idf_base()
-            for value in values_idf:
-                bp.insert_into(DateBase.IDF, *value)
+            bp.initialize_index_base()
+            for value in values:
+                bp.insert_into(DateBase.INDEX, *value)
 
             terms = bp.get_terms_iterator()
 

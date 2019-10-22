@@ -4,6 +4,10 @@
 import sqlite3
 import enum
 
+# will work after python 3.9 
+# see https://docs.pytest.org/en/latest/warnings.html
+from collections.abc import Iterator
+
 from App.Common.DateBase.SelectError import SelectError
 
 # TODO make linq
@@ -38,7 +42,7 @@ class BaseProvider:
         """
         self._cursor.execute(
             f" CREATE TABLE {DateBase.INDEX} \
-             ( word TEXT, path TEXT, position REAL, id INTEGER ) "
+             ( word TEXT, path TEXT, position REAL, utf_id INTEGER, uidf_id INTEGER ) "
         )
         self._connection.commit()
 
@@ -81,11 +85,14 @@ class BaseProvider:
         )
         self._connection.commit()
 
-    def get_terms_paths_iterator(self) -> iter:
+    def get_terms_paths_iterator(self) -> Iterator:
         """ Returns iterator that iterable by pair of word and path"""
         return TermsPathsItermator(self)
 
-    def get_terms_iterator(self) -> iter:
+    def get_terms_cpunt(self) -> int:
+        return len(TermsPathsItermator(self))
+
+    def get_terms_iterator(self) ->  Iterator:
         """ Returns iterator that iterable by words."""
         return TermsItermator(self)
 
@@ -164,7 +171,6 @@ class BaseProvider:
 
         if where:
             query += f" WHERE {where}"
-        # print(query)
         self._cursor.execute(query)
         return self._cursor.fetchone()
 
@@ -224,11 +230,6 @@ class BaseProvider:
 
     def get_encoding(self, file_name: str) -> str:
         """Return encoding of file
-        Raises
-        ------
-        SelectError
-            If can't find file's encoding in Encoding date base.
-        
         """
         encoding = self.select_one(
             DateBase.ENCODING,
@@ -236,7 +237,7 @@ class BaseProvider:
             select_params="encoding",
         )
         if not encoding:
-            raise SelectError
+            return "UTF-8"
         return encoding[0]
 
     def __enter__(self):
@@ -254,18 +255,27 @@ class BaseProvider:
         self.drop_table(DateBase.INDEX)
 
 
+    def recompile(self) -> None:
+        """Drop existing tables and creates new ones. """
+        self.drop_tables()
+        self.initalize_file_encoding()
+        self.initalize_idf_base()
+        self.initalize_tf_base()
+        self.initialize_index_base()
+
+
 class TermsPathsItermator:
     def __init__(self, provider: BaseProvider):
         self._provider = provider
 
     def __iter__(self):
-        self._counter = 0
+        self._counter = 1
         return self
 
     def __next__(self):
         result = self._provider.select_one(
             DateBase.INDEX,
-            where=f"id={self._counter}",
+            where=f"utf_id={self._counter}",
             select_params=" word, path ",
         )
         if result:
@@ -284,11 +294,11 @@ class TermsItermator:
         return self
 
     def __len__(self):
-        return self._provider.select_count(DateBase.IDF)
+        return self._provider.select_count(DateBase.INDEX)
 
     def __next__(self):
         result = self._provider.select_one(
-            DateBase.IDF, where=f"id={self._counter}", select_params="term"
+            DateBase.INDEX, where=f"uidf_id={self._counter}", select_params="word"
         )
         if result:
             self._counter += 1
