@@ -13,11 +13,11 @@ import pytest
 import tempfile
 import os
 
-FILES_DIR = os.path.join(
-    "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env/files"
+FILES_DIR = os.path.abspath(
+    "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env\\files"
 )
 
-DATEBASE = os.path.join(
+DATEBASE = os.path.abspath(
     "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env\\foogletempbase.db"
 )
 
