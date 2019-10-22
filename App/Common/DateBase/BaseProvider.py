@@ -300,6 +300,7 @@ class TermsItermator:
         result = self._provider.select_one(
             DateBase.INDEX, where=f"uidf_id={self._counter}", select_params="word"
         )
+
         if result:
             self._counter += 1
             return result[0]
