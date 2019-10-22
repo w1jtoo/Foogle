@@ -14,11 +14,11 @@ import tempfile
 import os
 
 FILES_DIR = os.path.abspath(
-    "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env\\files"
+    "Tests/env/files"
 )
 
 DATEBASE = os.path.abspath(
-    "C:\\Users\\w1jtoo\\Desktop\\programming\\python\\tasks\\Foogle\\Tests\\env\\foogletempbase.db"
+    "Tests/env/foogletempbase.db"
 )
 
 
