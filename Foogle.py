@@ -55,7 +55,9 @@ class Foogle:
         self._index = ReverceIndexBuilder(get_files(directory), self.base_provider)
         result = self._index.get_static_query(query)
         if result:
-            print("Result files:\n" + "\n".join(self._index.get_static_query(query)))
+            print(
+                "Result files:\n" + "\n".join(self._index.get_static_query(query))
+            )
         else:
             print("No coincidences was found.")
 
@@ -81,14 +83,12 @@ if __name__ == "__main__":
     )
     subprasers = parser.add_subparsers(dest="command")
     find = subprasers.add_parser("find", help="Make query request.")
-    find.add_argument(
-        "dir", help="Directory where query will be done.", type=str
-    )
+    find.add_argument("dir", help="Directory where query will be done.", type=str)
 
     find.add_argument(
         "query", nargs="+", help="Words that will be found.", type=str
     )
-    
+
     _compile = subprasers.add_parser("compile", help="Compile query base.")
     _compile.add_argument(
         "dir", help="Directory where query will be done.", type=str
@@ -97,9 +97,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     foogle = Foogle(parser)
 
-
     if args.command == "find":
-        print(args.dir +" " +"".join(args.query))
+        print(args.dir + " " + "".join(args.query))
         foogle.query("".join(args.query), args.dir)
     elif args.command == "compile":
         print(args.dir)

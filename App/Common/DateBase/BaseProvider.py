@@ -16,7 +16,7 @@ class DateBase(enum.Enum):
     TF = 2
     IDF = 3
     ENCODING = 4
-    SQLITE_MASTER = 5 
+    SQLITE_MASTER = 5
 
     def __str__(self):
         if self is DateBase.SQLITE_MASTER:
@@ -144,8 +144,7 @@ class BaseProvider:
             DateBase.SQLITE_MASTER,
             select_params="name",
             where=f"type = 'table' AND name= '{DateBase.TF}'",
-
-        ) 
+        )
         if tf:
             tf = tf[0] == str(DateBase.TF)
         else:
@@ -153,8 +152,7 @@ class BaseProvider:
         idf = self.select_one(
             DateBase.SQLITE_MASTER,
             select_params="name",
-            where=f"type = 'table' AND name= '{DateBase.IDF}'"
-
+            where=f"type = 'table' AND name= '{DateBase.IDF}'",
         )
         if idf:
             idf = idf[0] == str(DateBase.IDF)
@@ -163,8 +161,7 @@ class BaseProvider:
         encode = self.select_one(
             DateBase.SQLITE_MASTER,
             select_params="name",
-            where=f"type = 'table' AND name= '{DateBase.ENCODING}'" ,
-
+            where=f"type = 'table' AND name= '{DateBase.ENCODING}'",
         )
         if encode:
             encoding = encode[0] == str(DateBase.ENCODING)
@@ -224,7 +221,6 @@ class BaseProvider:
         if where:
             query += f" WHERE {where}"
 
-            
         self._cursor.execute(query)
         return self._cursor.fetchone()
 

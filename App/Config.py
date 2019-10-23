@@ -5,5 +5,3 @@ class Config:
 
     def get_date_base_name(self) -> str:
         return "foogletempbase.db"
-
-    

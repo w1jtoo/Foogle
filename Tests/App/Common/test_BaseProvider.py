@@ -101,7 +101,6 @@ def test_recompile():
             bp.recompile()
 
 
-
 values = [
     ("vasya", "\\home.txt", 0, 1, 1),
     ("is", "\\home.txt", 1, 2, 2),
@@ -158,7 +157,7 @@ def test_select_one():
                 "\\home.txt",
                 0,
                 1,
-                1
+                1,
             )
 
 
@@ -189,9 +188,6 @@ def test_terms_paths_iterator():
             assert set(excepted_terms) == set(
                 [(value[0], value[1]) for value in values]
             )
-
-
-
 
 
 def test_terms_iterator():

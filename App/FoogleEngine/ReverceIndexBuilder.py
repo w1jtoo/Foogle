@@ -52,7 +52,7 @@ class ReverceIndexBuilder:
                         uidf_result = uidf_count
                     else:
                         uidf_result = word_count
-            
+
                     self.base_provider.insert_into(
                         DateBase.INDEX, word, fname, position, itf_id, uidf_result
                     )
@@ -144,7 +144,7 @@ class ReverceIndexBuilder:
                 temp_list.append([w[0] / len(word) for w in t])
             for i in range(len(temp_list)):
                 for ind in range(len(temp_list[i])):
-                    temp_list[i][ind] =abs(temp_list[i][ind] - i)
+                    temp_list[i][ind] = abs(temp_list[i][ind] - i)
             if set(temp_list[0]).intersection(*temp_list):
                 result.append(filename)
         return self._get_rank(result, string)
