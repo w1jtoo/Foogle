@@ -1,13 +1,9 @@
 from App.Common.utils import get_files
-import os 
+import os
 
-FILES_DIR = os.path.abspath(
-    "Tests/environment/files"
-)
+FILES_DIR = os.path.abspath("Tests/environment/files")
 
-DATEBASE = os.path.abspath(
-    "Tests/environment/foogletempbase.db"
-)
+DATEBASE = os.path.abspath("Tests/environment/foogletempbase.db")
 
 
 def test_false():

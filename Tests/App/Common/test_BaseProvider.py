@@ -1,9 +1,5 @@
 from Tests.TestUtils import DateBaseEntity
-from App.Common.DateBase.BaseProvider import (
-    BaseProvider,
-    DateBase,
-    TermsPathsItermator,
-)
+from App.Common.DateBase.BaseProvider import BaseProvider, DateBase, TermsPathsItermator
 from App.Common.DateBase.SelectError import SelectError
 
 import pytest
@@ -74,9 +70,7 @@ def test_drop_tables():
 
             bp.drop_tables()
 
-            bp._connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            bp._connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
             assert not bp._cursor.fetchall()
 
 
@@ -89,9 +83,7 @@ def test_drop_table_nonexistent_table_should_not_raise_exeption():
             bp.drop_table(DateBase.TF)
             bp.drop_table(DateBase.INDEX)
 
-            bp._connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            bp._connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
             assert not bp._cursor.fetchall()
 
 
@@ -99,7 +91,6 @@ def test_recompile():
     with DateBaseEntity(BASE_NAME):
         with BaseProvider(BASE_NAME) as bp:
             bp.recompile()
-
 
 
 values = [
@@ -158,7 +149,7 @@ def test_select_one():
                 "\\home.txt",
                 0,
                 1,
-                1
+                1,
             )
 
 
@@ -189,9 +180,6 @@ def test_terms_paths_iterator():
             assert set(excepted_terms) == set(
                 [(value[0], value[1]) for value in values]
             )
-
-
-
 
 
 def test_terms_iterator():

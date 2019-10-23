@@ -81,25 +81,18 @@ if __name__ == "__main__":
     )
     subprasers = parser.add_subparsers(dest="command")
     find = subprasers.add_parser("find", help="Make query request.")
-    find.add_argument(
-        "dir", help="Directory where query will be done.", type=str
-    )
+    find.add_argument("dir", help="Directory where query will be done.", type=str)
 
-    find.add_argument(
-        "query", nargs="+", help="Words that will be found.", type=str
-    )
-    
+    find.add_argument("query", nargs="+", help="Words that will be found.", type=str)
+
     _compile = subprasers.add_parser("compile", help="Compile query base.")
-    _compile.add_argument(
-        "dir", help="Directory where query will be done.", type=str
-    )
+    _compile.add_argument("dir", help="Directory where query will be done.", type=str)
 
     args = parser.parse_args()
     foogle = Foogle(parser)
 
-
     if args.command == "find":
-        print(args.dir +" " +"".join(args.query))
+        print(args.dir + " " + "".join(args.query))
         foogle.query("".join(args.query), args.dir)
     elif args.command == "compile":
         print(args.dir)

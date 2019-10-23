@@ -39,8 +39,7 @@ class ReverceIndexBuilder:
                 for word in line.split(" "):
                     itf_id -= (
                         self.base_provider.select_count(
-                            DateBase.INDEX,
-                            where=f"word='{word}' AND path='{fname}'",
+                            DateBase.INDEX, where=f"word='{word}' AND path='{fname}'"
                         )
                         - 1
                     )
@@ -52,7 +51,7 @@ class ReverceIndexBuilder:
                         uidf_result = uidf_count
                     else:
                         uidf_result = word_count
-            
+
                     self.base_provider.insert_into(
                         DateBase.INDEX, word, fname, position, itf_id, uidf_result
                     )
@@ -89,9 +88,7 @@ class ReverceIndexBuilder:
         for term in self.base_provider.get_terms_iterator():
             # print(term)
             document_count = self.base_provider.select_count(
-                DateBase.INDEX,
-                count_params="DISTINCT path",
-                where=f"word = '{term}'",
+                DateBase.INDEX, count_params="DISTINCT path", where=f"word = '{term}'"
             )
 
             self.base_provider.insert_into(
@@ -144,7 +141,7 @@ class ReverceIndexBuilder:
                 temp_list.append([w[0] / len(word) for w in t])
             for i in range(len(temp_list)):
                 for ind in range(len(temp_list[i])):
-                    temp_list[i][ind] =abs(temp_list[i][ind] - i)
+                    temp_list[i][ind] = abs(temp_list[i][ind] - i)
             if set(temp_list[0]).intersection(*temp_list):
                 result.append(filename)
         return self._get_rank(result, string)

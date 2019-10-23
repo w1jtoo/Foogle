@@ -1,6 +1,7 @@
 import sqlite3
 import os
 
+
 class DateBaseEntity:
     """Creates temp date base. """
 
