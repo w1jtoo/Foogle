@@ -12,10 +12,10 @@ from App.Common.utils import get_files
 
 
 class Foogle:
-    def __init__(self):
+    def __init__(self, parser):
         self.base_provider = BaseProvider(self.get_config().get_date_base_name())
 
-        self.parser = argparse.ArgumentParser(description="Foogle")
+        self.parser = parser
 
         # TODO Subparser compile and query and add_parser
         # self.terminal = Terminal(self.container)
@@ -29,9 +29,7 @@ class Foogle:
     def compile(self, directory: str) -> None:
         print("Start of reverce index building...")
 
-        self._index = ReverceIndexBuilder(
-            get_files(directory), self.base_provider
-        )
+        self._index = ReverceIndexBuilder(get_files(directory), self.base_provider)
         self.base_provider.recompile()
 
         self.fill_in_encoding_base(directory)
@@ -46,18 +44,20 @@ class Foogle:
             )
 
     def query(self, query: str, directory: str) -> None:
-
+        directory = os.path.join(directory)
         if not os.path.exists(directory):
-            self.parser.error("Can't find the directory")
+            self.parser.error(f"Can't find the directory '{directory}'")
 
         print("Loading answer...")
-        self._index = ReverceIndexBuilder(
-            get_files(directory), self.base_provider
-        )
-        if not self._index:
+        if not self.base_provider.is_valid():
             self.parser.error("You should compile index first.")
 
-        print("Result files:\n" + "\n".join(self._index.get_static_query(query)))
+        self._index = ReverceIndexBuilder(get_files(directory), self.base_provider)
+        result = self._index.get_static_query(query)
+        if result:
+            print("Result files:\n" + "\n".join(self._index.get_static_query(query)))
+        else:
+            print("No coincidences was found.")
 
     def detect_encoding(self, file_name: str) -> str:
         u = UniversalDetector()
@@ -75,23 +75,32 @@ class Foogle:
 
 if __name__ == "__main__":
     # TODO replace sqlite queries to static class, less coherence
-    
     parser = argparse.ArgumentParser(
-        description="Pretends to be git", usage="Foogle --query [<dir>]"
+        description="File finder based on TF-IDF query searching. ",
+        usage="Foogle --query [<dir>]",
+    )
+    subprasers = parser.add_subparsers(dest="command")
+    find = subprasers.add_parser("find", help="Make query request.")
+    find.add_argument(
+        "dir", help="Directory where query will be done.", type=str
     )
 
-    parser.add_argument(
-        "--query", metavar="param", help="find query in a datebase", nargs=2
+    find.add_argument(
+        "query", nargs="+", help="Words that will be found.", type=str
     )
-
-    parser.add_argument(
-        "--compile", metavar="param", help="compile new datebase", nargs=1
+    
+    _compile = subprasers.add_parser("compile", help="Compile query base.")
+    _compile.add_argument(
+        "dir", help="Directory where query will be done.", type=str
     )
 
     args = parser.parse_args()
-    foogle = Foogle()
+    foogle = Foogle(parser)
 
-    if args.compile:
-        foogle.compile(args.compile[0])
-    elif args.query:
-        foogle.query(args.query[0], args.query[1])
+
+    if args.command == "find":
+        print(args.dir +" " +"".join(args.query))
+        foogle.query("".join(args.query), args.dir)
+    elif args.command == "compile":
+        print(args.dir)
+        foogle.compile(args.dir)

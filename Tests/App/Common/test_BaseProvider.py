@@ -101,14 +101,6 @@ def test_recompile():
             bp.recompile()
 
 
-# def test_get_terms():
-#     with DateBaseEntity(BASE_NAME):
-#         with BaseProvider(BASE_NAME) as bp:
-#             bp.initialize_index_base()
-#             bp.insert_into(DateBase.INDEX, "vasya", "\\home.txt", "12")
-
-#             assert bp.get_terms_and_paths() == [("vasya", "\\home.txt")]
-
 
 values = [
     ("vasya", "\\home.txt", 0, 1, 1),
@@ -214,3 +206,9 @@ def test_terms_iterator():
             excepted_terms = list(terms)
 
             assert excepted_terms == [value[0] for value in values]
+
+
+def test_is_valid_empty_base():
+    with DateBaseEntity(BASE_NAME):
+        with BaseProvider(BASE_NAME) as bp:
+            assert not bp.is_valid()

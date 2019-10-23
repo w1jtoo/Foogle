@@ -4,7 +4,7 @@
 import sqlite3
 import enum
 
-# will work after python 3.9 
+# will work after python 3.9
 # see https://docs.pytest.org/en/latest/warnings.html
 from collections.abc import Iterator
 
@@ -16,8 +16,11 @@ class DateBase(enum.Enum):
     TF = 2
     IDF = 3
     ENCODING = 4
+    SQLITE_MASTER = 5 
 
     def __str__(self):
+        if self is DateBase.SQLITE_MASTER:
+            return str(self.name).lower()
         return str(self.name).lower() + "_base"
 
 
@@ -92,7 +95,7 @@ class BaseProvider:
     def get_terms_cpunt(self) -> int:
         return len(TermsPathsItermator(self))
 
-    def get_terms_iterator(self) ->  Iterator:
+    def get_terms_iterator(self) -> Iterator:
         """ Returns iterator that iterable by words."""
         return TermsItermator(self)
 
@@ -120,6 +123,55 @@ class BaseProvider:
         result = self._cursor.fetchone()
 
         return result[0]
+
+    def is_valid(self) -> bool:
+        """Return if DateBase ready to work.
+        Returns
+        -------
+        bool 
+            True if tables inialized else False.
+        """
+        index = self.select_one(
+            DateBase.SQLITE_MASTER,
+            select_params="name",
+            where=f"type = 'table' AND name= '{DateBase.INDEX}'",
+        )
+        if index:
+            index = index[0] == str(DateBase.INDEX)
+        else:
+            return False
+        tf = self.select_one(
+            DateBase.SQLITE_MASTER,
+            select_params="name",
+            where=f"type = 'table' AND name= '{DateBase.TF}'",
+
+        ) 
+        if tf:
+            tf = tf[0] == str(DateBase.TF)
+        else:
+            return False
+        idf = self.select_one(
+            DateBase.SQLITE_MASTER,
+            select_params="name",
+            where=f"type = 'table' AND name= '{DateBase.IDF}'"
+
+        )
+        if idf:
+            idf = idf[0] == str(DateBase.IDF)
+        else:
+            return False
+        encode = self.select_one(
+            DateBase.SQLITE_MASTER,
+            select_params="name",
+            where=f"type = 'table' AND name= '{DateBase.ENCODING}'" ,
+
+        )
+        if encode:
+            encoding = encode[0] == str(DateBase.ENCODING)
+        else:
+            return False
+
+        return encode and idf and tf and index
 
     def select_all(self, base: DateBase, where="", select_params="*") -> list:
         """ Select all tuples of something in DateBase. Equivalent of SQL's SELECT...
@@ -171,6 +223,8 @@ class BaseProvider:
 
         if where:
             query += f" WHERE {where}"
+
+            
         self._cursor.execute(query)
         return self._cursor.fetchone()
 
@@ -253,7 +307,6 @@ class BaseProvider:
         self.drop_table(DateBase.IDF)
         self.drop_table(DateBase.TF)
         self.drop_table(DateBase.INDEX)
-
 
     def recompile(self) -> None:
         """Drop existing tables and creates new ones. """
