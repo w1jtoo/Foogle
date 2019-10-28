@@ -6,8 +6,7 @@ from chardet import UniversalDetector
 from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
 
 
-CLEANING_PATTERN = re.compile(r"[\W_]+")
-
+CLEANING_PATTERN = re.compile(r"[\d\w].*[\d\w]?")
 
 class ReverceIndexBuilder:
     def __init__(self, files: list, base_provider: BaseProvider):
@@ -22,11 +21,14 @@ class ReverceIndexBuilder:
     def _builder_init(self):
         # there is some optimization
         # so we can do it in 2o(nl) instead of 3o(nl)
-        itf_id = 0
-        uidf_count = 1
+        pattern = re.compile(r"[\W_]+")
+        unique_terms_count = 1
+        lines_count = 1
         for fname in self.files:
+            path_terms_count = 1
             position = 0
             encoding = self.base_provider.get_encoding(fname)
+
             if encoding == "NULL":
                 print(f"Can't load file encoding: '{fname}'")
                 continue
@@ -34,39 +36,71 @@ class ReverceIndexBuilder:
             f = open(fname, "r", encoding=encoding)
             while 1:
                 line = f.readline().lower()
+                lines_count += 1
+                print(lines_count)
                 if not line:
                     break
-                for word in line.split(" "):
-                    itf_id -= (
-                        self.base_provider.select_count(
-                            DateBase.INDEX, where=f"word='{word}' AND path='{fname}'"
-                        )
-                        - 1
-                    )
-                    word_count = self.base_provider.select_count(
-                        DateBase.INDEX, where=f"word='{word}'"
-                    )
-                    if not word_count:
-                        uidf_count += 1
-                        uidf_result = uidf_count
+                # TODO do smth with word
+                for word in line.split():
+                    word = CLEANING_PATTERN.search(word)
+
+                    if word:
+                        word = word.group(0)
                     else:
-                        uidf_result = word_count
+                        continue
+
+                    paths_count = self.base_provider.select_one(
+                        DateBase.INDEX,
+                        select_params="upt_id",
+                        where=f"word=? AND path=?",
+                        where_params=(word, fname),
+                    )
+
+                    word_count = self.base_provider.select_one(
+                        DateBase.INDEX,
+                        select_params="uterm_id",
+                        where=f"word=?",
+                        where_params=(word,),
+                    )
+
+
+                    
+                    if word_count:
+                        ut_result = word_count[0]
+                    else:
+                        
+                        ut_result =unique_terms_count
+                        unique_terms_count +=1
+
+                    if not path_terms_count:
+                        upt_result = paths_count[0]
+                    else:
+                        upt_result = path_terms_count
+                        path_terms_count += 1
+
 
                     self.base_provider.insert_into(
-                        DateBase.INDEX, word, fname, position, itf_id, uidf_result
+                        DateBase.INDEX,
+                        word,
+                        fname,
+                        position,
+                        upt_result,
+                        ut_result,
                     )
                     position += len(word)
-                position += len(line)
+            self.base_provider.commit()
             f.close()
 
     def set_term_frequency(self) -> None:
         for term, path in self.base_provider.get_terms_paths_iterator():
             count_of_term = self.base_provider.select_count(
-                DateBase.INDEX, where=f"path = '{path}' AND word= '{term}'"
+                DateBase.INDEX,
+                where=f"path = ? AND word= ?",
+                where_params=(path, term),
             )
 
             total_term_count = self.base_provider.select_count(
-                DateBase.INDEX, where=f"path = '{path}'"
+                DateBase.INDEX, where=f"path = ?", where_params=(path,)
             )
 
             # WRITE TABLE
@@ -75,10 +109,10 @@ class ReverceIndexBuilder:
             # tf(t, doc) = A / B where
             # a:= count of t in doc
             # b:= total count of word in doc
-
             self.base_provider.insert_into(
                 DateBase.TF, path, term, count_of_term / total_term_count
             )
+        self.base_provider.commit()
 
     def set_inverce_frequency(self) -> None:
         # CAN BE OPTIMIZED
@@ -86,21 +120,25 @@ class ReverceIndexBuilder:
         # get unique term list
 
         for term in self.base_provider.get_terms_iterator():
-            # print(term)
             document_count = self.base_provider.select_count(
-                DateBase.INDEX, count_params="DISTINCT path", where=f"word = '{term}'"
+                DateBase.INDEX,
+                count_params="DISTINCT path",
+                where=f"word = ?",
+                where_params=(term,),
             )
 
             self.base_provider.insert_into(
                 DateBase.IDF, term, math.log(len(self.files) / document_count)
             )
+        self.base_provider.commit()
 
     def get_positions_in_file(self, word: str, path: str) -> list:
 
         positions = self.base_provider.select_all(
             DateBase.INDEX,
             select_params="position",
-            where=f" word = '{word}' AND path = '{path}' ",
+            where=f" word =? AND path =? ",
+            where_params=(word, path),
         )
         return [path[0] for path in positions]
 
@@ -116,34 +154,39 @@ class ReverceIndexBuilder:
 
         for word in string.split():
             # make query for a single word
-            if word in self.base_provider.get_terms_iterator():
                 # add rank
-                paths = self.base_provider.select_distinct(
-                    DateBase.INDEX, where=f"word = '{word}'", distinct_params="path"
-                )
-
-                lists.append([*[path[0] for path in paths]])
+            paths = self.base_provider.select_distinct(
+                DateBase.INDEX,
+                where=f"word =?",
+                where_params=(word,),
+                distinct_params="path",
+            )
+            if paths:
+                lists.append([path[0] for path in paths])
             else:
                 lists.append([])
 
         # CAN BE FASTER
-        setted = set(lists[0]).intersection(*lists) if lists else set()
-        for filename in setted:
+        intersection = set(lists[0]).intersection(*lists) if lists else set()
+        for filename in intersection:
             temp_list = []
+
             for word in string.split():
                 # TODO HERE!!!
                 t = self.base_provider.select_all(
                     DateBase.INDEX,
-                    where=f"word = '{word}' AND path = '{filename}'",
+                    where=f"word =? AND path =?",
+                    where_params=(word, filename),
                     select_params="position",
                 )
 
                 temp_list.append([w[0] / len(word) for w in t])
             for i in range(len(temp_list)):
                 for ind in range(len(temp_list[i])):
-                    temp_list[i][ind] = abs(temp_list[i][ind] - i)
+                    temp_list[i][ind] -= temp_list[i][0]
             if set(temp_list[0]).intersection(*temp_list):
                 result.append(filename)
+        return result
         return self._get_rank(result, string)
 
     def _term_total_freq(self, query):
@@ -165,7 +208,8 @@ class ReverceIndexBuilder:
         # )
         result = self.base_provider.select_one(
             DateBase.TF,
-            where=f"word = '{term}' AND path = '{fname}'",
+            where=f"word =? AND path =? ",
+            where_params=(term, fname),
             select_params="tf",
         )
         if not result:
@@ -174,7 +218,10 @@ class ReverceIndexBuilder:
 
     def get_inverce_term_frequency(self, term: str) -> int:
         result = self.base_provider.select_one(
-            DateBase.IDF, where=f" term = '{term}' ", select_params="idf"
+            DateBase.IDF,
+            where=f" term =? ",
+            where_params=(term,),
+            select_params="idf",
         )
         if not result:
             return 0

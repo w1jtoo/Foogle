@@ -1,5 +1,9 @@
 from Tests.TestUtils import DateBaseEntity
-from App.Common.DateBase.BaseProvider import BaseProvider, DateBase, TermsPathsItermator
+from App.Common.DateBase.BaseProvider import (
+    BaseProvider,
+    DateBase,
+    TermsPathsItermator,
+)
 from App.Common.DateBase.SelectError import SelectError
 
 import pytest
@@ -70,7 +74,9 @@ def test_drop_tables():
 
             bp.drop_tables()
 
-            bp._connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            bp._connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
             assert not bp._cursor.fetchall()
 
 
@@ -83,7 +89,9 @@ def test_drop_table_nonexistent_table_should_not_raise_exeption():
             bp.drop_table(DateBase.TF)
             bp.drop_table(DateBase.INDEX)
 
-            bp._connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            bp._connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
             assert not bp._cursor.fetchall()
 
 
@@ -111,9 +119,18 @@ def test_secet_count_all_and_logic():
 
             assert (
                 bp.select_count(DateBase.INDEX) == 4
-                and bp.select_count(DateBase.INDEX, where="path='\\home.txt'") == 4
-                and bp.select_count(DateBase.INDEX, where="path='nonpath'") == 0
-                and bp.select_count(DateBase.INDEX, where="word='vasya'") == 1
+                and bp.select_count(
+                    DateBase.INDEX, where="path=?", where_params=(values[0][1], )
+                )
+                == 4
+                and bp.select_count(
+                    DateBase.INDEX, where="path=?", where_params=("123", )
+                )
+                == 0
+                and bp.select_count(
+                    DateBase.INDEX, where="word=?", where_params=(values[0][0], )
+                )
+                == 1
             )
 
 
@@ -144,13 +161,9 @@ def test_select_one():
             for value in values:
                 bp.insert_into(DateBase.INDEX, *value)
 
-            assert bp.select_one(DateBase.INDEX, where="word='vasya'") == (
-                "vasya",
-                "\\home.txt",
-                0,
-                1,
-                1,
-            )
+            assert bp.select_one(
+                DateBase.INDEX, where="word=?", where_params=("vasya", )
+            ) == ("vasya", "\\home.txt", 0, 1, 1)
 
 
 def test_select_distinct():
@@ -161,9 +174,9 @@ def test_select_distinct():
             for value in values:
                 bp.insert_into(DateBase.INDEX, *value)
 
-            assert bp.select_distinct(DateBase.INDEX, distinct_params="path") == [
-                ("\\home.txt",)
-            ]
+            assert bp.select_distinct(
+                DateBase.INDEX, distinct_params="path"
+            ) == [("\\home.txt",)]
 
 
 def test_terms_paths_iterator():

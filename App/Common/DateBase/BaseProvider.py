@@ -1,6 +1,6 @@
 # TODO replace it to cnfg file
 
-
+from App.Common.utils import timeme
 import sqlite3
 import enum
 
@@ -45,7 +45,7 @@ class BaseProvider:
         """
         self._cursor.execute(
             f" CREATE TABLE {DateBase.INDEX} \
-             ( word TEXT, path TEXT, position REAL, utf_id INTEGER, uidf_id INTEGER ) "
+             ( word TEXT, path TEXT, position REAL, upt_id INTEGER, uterm_id INTEGER ) "
         )
         self._connection.commit()
 
@@ -92,14 +92,16 @@ class BaseProvider:
         """ Returns iterator that iterable by pair of word and path"""
         return TermsPathsItermator(self)
 
-    def get_terms_cpunt(self) -> int:
+    def get_terms_count(self) -> int:
         return len(TermsPathsItermator(self))
 
     def get_terms_iterator(self) -> Iterator:
         """ Returns iterator that iterable by words."""
         return TermsItermator(self)
 
-    def select_count(self, base: DateBase, where="", count_params="*") -> int:
+    def select_count(
+        self, base: DateBase, where="", count_params="*", where_params=()
+    ) -> int:
         """ Select count of something in DateBase. Equivalent of SQL's SELECT COUNT...
 
         Parameters
@@ -110,6 +112,8 @@ class BaseProvider:
             condition that used to count item. Equivalent of SQL's WHERE
         count_params : str
             what sql's entity like tables, columns etc. should be returned. 
+        where_params : tuples
+            what entities tuple  
         Returns
         -------
         int
@@ -117,9 +121,17 @@ class BaseProvider:
 
         """
         query = f"SELECT COUNT({count_params}) FROM {base}"
+        if not where and where_params or where and not where_params:
+            raise SelectError()
+        
         if where:
             query += f" WHERE {where}"
-        self._cursor.execute(query)
+
+        if where_params:
+            self._cursor.execute(query, where_params)
+        else:
+            self._cursor.execute(query)
+
         result = self._cursor.fetchone()
 
         return result[0]
@@ -134,7 +146,8 @@ class BaseProvider:
         index = self.select_one(
             DateBase.SQLITE_MASTER,
             select_params="name",
-            where=f"type = 'table' AND name= '{DateBase.INDEX}'",
+            where=f"type = 'table' AND name=?",
+            where_params=(str(DateBase.INDEX),),
         )
         if index:
             index = index[0] == str(DateBase.INDEX)
@@ -143,7 +156,8 @@ class BaseProvider:
         tf = self.select_one(
             DateBase.SQLITE_MASTER,
             select_params="name",
-            where=f"type = 'table' AND name= '{DateBase.TF}'",
+            where=f"type = 'table' AND name= ?",
+            where_params=(str(DateBase.TF),),
         )
         if tf:
             tf = tf[0] == str(DateBase.TF)
@@ -152,7 +166,8 @@ class BaseProvider:
         idf = self.select_one(
             DateBase.SQLITE_MASTER,
             select_params="name",
-            where=f"type = 'table' AND name= '{DateBase.IDF}'",
+            where=f"type = 'table' AND name=?",
+            where_params=(str(DateBase.IDF),),
         )
         if idf:
             idf = idf[0] == str(DateBase.IDF)
@@ -161,16 +176,19 @@ class BaseProvider:
         encode = self.select_one(
             DateBase.SQLITE_MASTER,
             select_params="name",
-            where=f"type = 'table' AND name= '{DateBase.ENCODING}'",
+            where=f"type = 'table' AND name=?",
+            where_params=(str(DateBase.ENCODING), ),
         )
         if encode:
-            encoding = encode[0] == str(DateBase.ENCODING)
+            encode = encode[0] == str(DateBase.ENCODING)
         else:
             return False
 
-        return encode and idf and tf and index
+        return bool(encode and idf and tf and index)
 
-    def select_all(self, base: DateBase, where="", select_params="*") -> list:
+    def select_all(
+        self, base: DateBase, where="", select_params="*", where_params=()
+    ) -> list:
         """ Select all tuples of something in DateBase. Equivalent of SQL's SELECT...
 
         Parameters
@@ -187,16 +205,25 @@ class BaseProvider:
             list of tuples that mapped in base. 
             
         """
+        if not where and where_params or where and not where_params:
+            raise SelectError()
+
         if select_params == "*":
             query = f"SELECT * FROM {base}"
         else:
             query = f"SELECT ({select_params}) FROM {base}"
         if where:
             query += f" WHERE {where}"
-        self._cursor.execute(query)
+        if where_params:
+            self._cursor.execute(query, where_params)
+        else:
+            self._cursor.execute(query)
+
         return self._cursor.fetchall()
 
-    def select_one(self, base: DateBase, where="", select_params="*") -> tuple:
+    def select_one(
+        self, base: DateBase, where="", select_params="*", where_params=()
+    ) -> tuple:
         """ Select tuple of something in DateBase. Equivalent of SQL's SELECT...
 
         Parameters
@@ -213,6 +240,9 @@ class BaseProvider:
             what was mapped in base. 
             
         """
+        if not where and where_params or where and not where_params:
+            raise SelectError()
+
         if select_params == "*":
             query = f"SELECT * FROM {base}"
         else:
@@ -221,11 +251,17 @@ class BaseProvider:
         if where:
             query += f" WHERE {where}"
 
-        self._cursor.execute(query)
+        if where_params:
+            self._cursor.execute(query, where_params)
+        else:
+            self._cursor.execute(query)
+
         return self._cursor.fetchone()
 
     def insert_into(self, base: DateBase, *values) -> None:
         """ Insert into table values.
+
+        Don't save changes.
 
         Parameters
         ----------
@@ -235,24 +271,27 @@ class BaseProvider:
             values that should be inserted. 
         """
         # make str values to it's format
-        result = []
-        for value in values:
-            if isinstance(value, str):
-                result.append(f"'{value}'")
-            elif str(value).replace(".", "", 1).isdigit():
-                result.append(str(value))
-
         if base == DateBase.IDF:
             self._cursor.execute(
-                f"INSERT INTO {base} (term, idf) VALUES ({', '.join(result)})"
+                f"INSERT INTO {base} (term, idf) VALUES ({', '.join( [ '?' ] * len(values) )})",
+                values,
             )
             self._connection.commit()
             return
-        self._cursor.execute(f"INSERT INTO {base} VALUES ({', '.join(result)})")
+        self._cursor.execute(
+            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})",
+            values,
+        )
+
+    def commit(self) -> None:
         self._connection.commit()
 
     def select_distinct(
-        self, date_base: DateBase, where="", distinct_params="*"
+        self,
+        date_base: DateBase,
+        where="",
+        distinct_params="*",
+        where_params=(),
     ) -> list:
         """ Select unique tuples of something in DateBase. Equivalent of SQL's SELECT DISTINCT...
 
@@ -270,11 +309,17 @@ class BaseProvider:
             list of tuples that mapped in base. 
             
         """
+        if not where and where_params or where and not where_params:
+            raise SelectError()
 
         query = f"SELECT DISTINCT {distinct_params} FROM {date_base}"
         if where:
             query += f" WHERE {where}"
-        self._cursor.execute(query)
+
+        if where_params:
+            self._cursor.execute(query, where_params)
+        else:
+            self._cursor.execute(query)
 
         return self._cursor.fetchall()
 
@@ -282,7 +327,10 @@ class BaseProvider:
         """Return encoding of file
         """
         encoding = self.select_one(
-            DateBase.ENCODING, where=f"path = '{file_name}'", select_params="encoding"
+            DateBase.ENCODING,
+            where=f"path = ?",
+            where_params=(file_name,),
+            select_params="encoding",
         )
         if not encoding:
             return "UTF-8"
@@ -322,7 +370,8 @@ class TermsPathsItermator:
     def __next__(self):
         result = self._provider.select_one(
             DateBase.INDEX,
-            where=f"utf_id={self._counter}",
+            where=f"upt_id=?",
+            where_params=(self._counter,),
             select_params=" word, path ",
         )
         if result:
@@ -345,7 +394,10 @@ class TermsItermator:
 
     def __next__(self):
         result = self._provider.select_one(
-            DateBase.INDEX, where=f"uidf_id={self._counter}", select_params="word"
+            DateBase.INDEX,
+            where=f"uterm_id=?",
+            where_params=(self._counter,),
+            select_params="word",
         )
 
         if result:
