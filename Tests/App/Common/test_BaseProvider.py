@@ -75,7 +75,8 @@ def test_drop_tables():
             bp.drop_tables()
 
             bp._connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
+                "SELECT name FROM \
+                sqlite_master WHERE type='table'"
             )
             assert not bp._cursor.fetchall()
 
@@ -90,7 +91,8 @@ def test_drop_table_nonexistent_table_should_not_raise_exeption():
             bp.drop_table(DateBase.INDEX)
 
             bp._connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
+                "SELECT name FROM sqlite_master \
+                    WHERE type='table'"
             )
             assert not bp._cursor.fetchall()
 
@@ -120,15 +122,19 @@ def test_secet_count_all_and_logic():
             assert (
                 bp.select_count(DateBase.INDEX) == 4
                 and bp.select_count(
-                    DateBase.INDEX, where="path=?", where_params=(values[0][1], )
+                    DateBase.INDEX,
+                    where="path=?",
+                    where_params=(values[0][1],),
                 )
                 == 4
                 and bp.select_count(
-                    DateBase.INDEX, where="path=?", where_params=("123", )
+                    DateBase.INDEX, where="path=?", where_params=("123",)
                 )
                 == 0
                 and bp.select_count(
-                    DateBase.INDEX, where="word=?", where_params=(values[0][0], )
+                    DateBase.INDEX,
+                    where="word=?",
+                    where_params=(values[0][0],),
                 )
                 == 1
             )
@@ -162,7 +168,7 @@ def test_select_one():
                 bp.insert_into(DateBase.INDEX, *value)
 
             assert bp.select_one(
-                DateBase.INDEX, where="word=?", where_params=("vasya", )
+                DateBase.INDEX, where="word=?", where_params=("vasya",)
             ) == ("vasya", "\\home.txt", 0, 1, 1)
 
 

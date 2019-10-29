@@ -25,9 +25,10 @@ class DateBase(enum.Enum):
 
 class BaseProvider:
     # TODO I should use Date Base normalization but nowdays it's to time expensive for me
-    def __init__(self, db_name: str):
+    def __init__(self, db_path: str):
         """"""
-        self._db_name = db_name
+        print(db_path)
+        self._db_name = db_path
         self._connection = sqlite3.connect(self._db_name)
         self._cursor = self._connection.cursor()
 
@@ -122,7 +123,7 @@ class BaseProvider:
         query = f"SELECT COUNT({count_params}) FROM {base}"
         if not where and where_params or where and not where_params:
             raise SelectError()
-        
+
         if where:
             query += f" WHERE {where}"
 
@@ -176,7 +177,7 @@ class BaseProvider:
             DateBase.SQLITE_MASTER,
             select_params="name",
             where=f"type = 'table' AND name=?",
-            where_params=(str(DateBase.ENCODING), ),
+            where_params=(str(DateBase.ENCODING),),
         )
         if encode:
             encode = encode[0] == str(DateBase.ENCODING)
@@ -257,6 +258,10 @@ class BaseProvider:
 
         return self._cursor.fetchone()
 
+    def get_files(self) -> list:
+        files = self.select_all(DateBase.ENCODING, select_params="path")
+        return [f[0] for f in files]
+
     def insert_into(self, base: DateBase, *values) -> None:
         """ Insert into table values.
 
@@ -278,19 +283,14 @@ class BaseProvider:
             self._connection.commit()
             return
         self._cursor.execute(
-            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})",
-            values,
+            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})", values
         )
 
     def commit(self) -> None:
         self._connection.commit()
 
     def select_distinct(
-        self,
-        date_base: DateBase,
-        where="",
-        distinct_params="*",
-        where_params=(),
+        self, date_base: DateBase, where="", distinct_params="*", where_params=()
     ) -> list:
         """ Select unique tuples of something in DateBase. Equivalent of SQL's SELECT DISTINCT...
 

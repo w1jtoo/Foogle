@@ -1,9 +1,5 @@
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
-from App.Common.DateBase.BaseProvider import (
-    BaseProvider,
-    DateBase,
-    TermsPathsItermator,
-)
+from App.Common.DateBase.BaseProvider import BaseProvider, DateBase, TermsPathsItermator
 from Tests.TestUtils import DateBaseEntity
 
 from App.Common.utils import get_files, filter_files
@@ -28,11 +24,11 @@ def test_index_compile():
             index.compile()
 
             assert (
-                index.get_static_query("hello world")
-                and index.get_static_query("world hello")
-                and index.get_static_query("hello")
-                and not index.get_static_query("gghhgghh")
-                and not index.get_static_query("")
+                index.get_static_query("hello world", True)
+                and index.get_static_query("world hello", True)
+                and index.get_static_query("hello", True)
+                and not index.get_static_query("gghhgghh", True)
+                and not index.get_static_query("", True)
             )
 
 
@@ -46,6 +42,6 @@ def test_static_params():
             )
             index.compile()
 
-            assert set(index.get_static_query("hello world")) == set(
-                index.get_static_query("world hello")
+            assert set(index.get_static_query("hello world", False)) == set(
+                index.get_static_query("world hello", False)
             )
