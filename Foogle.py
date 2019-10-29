@@ -7,14 +7,15 @@ import os.path
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
 from App.Common.DateBase.BaseProvider import BaseProvider
 from chardet import UniversalDetector
-import sqlite3
-from App.Common.utils import get_files
+from App.Common.utils import get_files, filter_files
+from pathlib import Path
 
 
 class Foogle:
     def __init__(self, parser):
-        self.base_provider = BaseProvider(self.get_config().get_date_base_name())
-
+        self.base_provider = BaseProvider(
+            self.get_config().get_date_base_name()
+        )
         self.parser = parser
 
         # TODO Subparser compile and query and add_parser
@@ -26,13 +27,21 @@ class Foogle:
     def get_config(self) -> Config:
         return Config()
 
-    def compile(self, directory: str) -> None:
-        print("Start of reverce index building...")
+    def compile(self, directory="") -> None:
+        if not directory:
+            directory = Path.cwd()
+        print(f"Starting scaning {directory}...")
+        files = filter_files(
+            get_files(directory), self.get_config().get_types()
+        )
+        print(f"Found {len(files)} files to build index in.")
 
-        self._index = ReverceIndexBuilder(get_files(directory), self.base_provider)
+        self._index = ReverceIndexBuilder(files, self.base_provider)
         self.base_provider.recompile()
 
         self.fill_in_encoding_base(directory)
+
+        print("Start of reverce index building...")
         self._index.compile()
 
         print("Base was compiled successfully")
@@ -52,10 +61,15 @@ class Foogle:
         if not self.base_provider.is_valid():
             self.parser.error("You should compile index first.")
 
-        self._index = ReverceIndexBuilder(get_files(directory), self.base_provider)
+        self._index = ReverceIndexBuilder(
+            get_files(directory), self.base_provider
+        )
         result = self._index.get_static_query(query)
         if result:
-            print("Result files:\n" + "\n".join(self._index.get_static_query(query)))
+            print(
+                "Result files:\n"
+                + "\n".join(self._index.get_static_query(query))
+            )
         else:
             print("No coincidences was found.")
 
@@ -81,12 +95,18 @@ if __name__ == "__main__":
     )
     subprasers = parser.add_subparsers(dest="command")
     find = subprasers.add_parser("find", help="Make query request.")
-    find.add_argument("dir", help="Directory where query will be done.", type=str)
+    find.add_argument(
+        "dir", help="Directory where query will be done.", type=str
+    )
 
-    find.add_argument("query", nargs="+", help="Words that will be found.", type=str)
+    find.add_argument(
+        "query", nargs="+", help="Words that will be found.", type=str
+    )
 
     _compile = subprasers.add_parser("compile", help="Compile query base.")
-    _compile.add_argument("dir", help="Directory where query will be done.", type=str)
+    _compile.add_argument(
+        "dir", help="Directory where query will be done.", type=str
+    )
 
     args = parser.parse_args()
     foogle = Foogle(parser)
@@ -97,3 +117,6 @@ if __name__ == "__main__":
     elif args.command == "compile":
         print(args.dir)
         foogle.compile(args.dir)
+    else:
+        parser.print_help()
+        exit()

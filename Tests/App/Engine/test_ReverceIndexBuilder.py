@@ -1,8 +1,12 @@
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
-from App.Common.DateBase.BaseProvider import BaseProvider, DateBase, TermsPathsItermator
+from App.Common.DateBase.BaseProvider import (
+    BaseProvider,
+    DateBase,
+    TermsPathsItermator,
+)
 from Tests.TestUtils import DateBaseEntity
 
-from App.Common.utils import get_files
+from App.Common.utils import get_files, filter_files
 
 
 import pytest
@@ -18,7 +22,9 @@ def test_index_compile():
     with DateBaseEntity(DATEBASE):
         with BaseProvider(DATEBASE) as bp:
             bp.recompile()
-            index = ReverceIndexBuilder(get_files(FILES_DIR), bp)
+            index = ReverceIndexBuilder(
+                filter_files(get_files(FILES_DIR), ["text/plain"]), bp
+            )
             index.compile()
 
             assert (
@@ -35,7 +41,9 @@ def test_static_params():
     with DateBaseEntity(DATEBASE):
         with BaseProvider(DATEBASE) as bp:
             bp.recompile()
-            index = ReverceIndexBuilder(get_files(FILES_DIR), bp)
+            index = ReverceIndexBuilder(
+                filter_files(get_files(FILES_DIR), ["text/plain"]), bp
+            )
             index.compile()
 
             assert set(index.get_static_query("hello world")) == set(

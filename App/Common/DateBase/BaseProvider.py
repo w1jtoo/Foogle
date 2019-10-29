@@ -1,6 +1,5 @@
 # TODO replace it to cnfg file
 
-from App.Common.utils import timeme
 import sqlite3
 import enum
 

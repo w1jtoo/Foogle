@@ -62,13 +62,10 @@ class ReverceIndexBuilder:
                         where=f"word=?",
                         where_params=(word,),
                     )
-
-
                     
                     if word_count:
                         ut_result = word_count[0]
                     else:
-                        
                         ut_result =unique_terms_count
                         unique_terms_count +=1
 
@@ -77,7 +74,6 @@ class ReverceIndexBuilder:
                     else:
                         upt_result = path_terms_count
                         path_terms_count += 1
-
 
                     self.base_provider.insert_into(
                         DateBase.INDEX,
@@ -181,12 +177,14 @@ class ReverceIndexBuilder:
                 )
 
                 temp_list.append([w[0] / len(word) for w in t])
+
             for i in range(len(temp_list)):
                 for ind in range(len(temp_list[i])):
                     temp_list[i][ind] -= temp_list[i][0]
             if set(temp_list[0]).intersection(*temp_list):
                 result.append(filename)
-        return result
+
+        # return result
         return self._get_rank(result, string)
 
     def _term_total_freq(self, query):
