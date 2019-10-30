@@ -31,17 +31,15 @@ class Foogle:
                 self.get_config().get_date_base_name(),
             )
         )
-
+        self.fill_in_encoding_base(directory)
         print(f"Starting scaning {directory}...")
         files = filter_files(
-            self.base_provider.get_files(), self.get_config().get_types()
+            get_files(directory), self.get_config().get_types()
         )
         print(f"Found {len(files)} files to build index in.")
 
         self._index = ReverceIndexBuilder(files, self.base_provider)
         self.base_provider.recompile()
-
-        self.fill_in_encoding_base(directory)
 
         print("Start of reverce index building...")
         self._index.compile()
