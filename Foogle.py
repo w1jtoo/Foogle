@@ -35,18 +35,18 @@ class Foogle:
         files = filter_files(
             get_files(directory), self.get_config().get_types()
         )
+        self.fill_in_encoding_base(files)
         print(f"Found {len(files)} files to build index in.")
 
         self._index = ReverceIndexBuilder(files, self.base_provider)
         self.base_provider.recompile()
-        self.fill_in_encoding_base(directory)
         print("Start of reverce index building...")
         self._index.compile()
 
         print("Base was compiled successfully")
 
-    def fill_in_encoding_base(self, directory: str) -> None:
-        for path in get_files(directory):
+    def fill_in_encoding_base(self, files: list) -> None:
+        for path in files:
             self.base_provider.add_encoding_file(path, self.detect_encoding(path))
 
     def query(self, query: str, ranking: bool, directory="") -> None:

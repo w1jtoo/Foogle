@@ -1,18 +1,19 @@
 import os
 import time
 from mimetypes import guess_type, types_map
+from typing import List
 
 
-def get_files(path_name: str) -> list:
-    result = []
-    for _, _, files in os.walk(path_name):
+def get_files(path_name: str) -> List[str]:
+    result: List[str] = []
+    for dirpath, _, files in os.walk(path_name):
         for file_name in files:
-            result.append(os.path.join(path_name, file_name))
+            result.append(os.path.abspath(os.path.join(dirpath, file_name)))
     return result
 
 
-def filter_files(files: list, types: list, extention_types=[]) -> list:
-    result = []
+def filter_files(files: list, types: list, extention_types=[]) -> List[str]:
+    result: List[str] = []
     _types = []
 
     for _type in extention_types:

@@ -3,6 +3,7 @@ import re
 import math
 import sqlite3
 from chardet import UniversalDetector
+from typing import List
 from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
 
 
@@ -76,7 +77,12 @@ class ReverceIndexBuilder:
                         path_terms_count += 1
 
                     self.base_provider.insert_into(
-                        DateBase.INDEX, word, fname, position, upt_result, ut_result
+                        DateBase.INDEX,
+                        word,
+                        fname,
+                        position,
+                        upt_result,
+                        ut_result,
                     )
                     position += len(word)
             self.base_provider.commit()
@@ -85,7 +91,9 @@ class ReverceIndexBuilder:
     def set_term_frequency(self) -> None:
         for term, path in self.base_provider.get_terms_paths_iterator():
             count_of_term = self.base_provider.select_count(
-                DateBase.INDEX, where=f"path = ? AND word= ?", where_params=(path, term)
+                DateBase.INDEX,
+                where=f"path = ? AND word= ?",
+                where_params=(path, term),
             )
 
             total_term_count = self.base_provider.select_count(
@@ -181,16 +189,6 @@ class ReverceIndexBuilder:
         else:
             return result
 
-    def _term_total_freq(self, query):
-        temp = []
-        for term in self.base_provider.get_terms_iterator():
-            count = 0
-            for word in query.split():
-                if word == term:
-                    count += 1
-            temp.append(count)
-        return temp
-
     def get_term_frequency(self, fname: str, term: str) -> int:
         # cursor.execute(
         #     "SELECT tf FROM {} \
@@ -210,72 +208,53 @@ class ReverceIndexBuilder:
 
     def get_inverce_term_frequency(self, term: str) -> int:
         result = self.base_provider.select_one(
-            DateBase.IDF, where=f" term =? ", where_params=(term,), select_params="idf"
+            DateBase.IDF,
+            where=f" term =? ",
+            where_params=(term,),
+            select_params="idf",
         )
         if not result:
             return 0
         return result[0]
 
-    def _make_vectors_for_query(self, files: str) -> dict:
-
-        # cursor.execute("SELECT DISTINCT word FROM {}".format(INDEX_BASE_NAME))
-        vecs = {}
-        for f in files:
-            vdoc = []
-            for term in self.base_provider.get_terms_iterator():
-                vdoc.append(
-                    self.get_term_frequency(f, term)
-                    * self.get_inverce_term_frequency(term)
-                )
-            vecs[f] = vdoc
-        return vecs
-
-    def _query_vecor(self, query: str) -> list:
-
-        pattern = re.compile(r"[\W_]+")
-        query = pattern.sub(" ", query)
-
-        query_vector = []
-        for word in query.split(" "):
-            query_vector.append(self._get_query_frequency(word, query))
-
-        query_idf = [
-            self.get_inverce_term_frequency(word)
-            for word in self.base_provider.get_terms_iterator()
-        ]
-        magnitude = pow(sum(map(lambda x: x ** 2, query_vector)), 0.5)
-        if not magnitude:
-            magnitude = 1
-
-        freq = self._term_total_freq(query)
-        query_tf = [x / magnitude for x in freq]
-        # what the fuck is going on here?
-        final = []
-        for tf, idf in zip(query_tf, query_idf):
-            final.append(tf * idf)
-        return final
-
-    def _get_query_frequency(self, term, query) -> int:
+    def _get_query_frequency(self, term: str, query: str) -> int:
+        # can be faster
         count = 0
         for word in query.split():
             if word == term:
                 count += 1
         return count
 
-    def _product(self, doc1, doc2):
+    def _product(self, file_name: str, query: str) -> float:
 
-        if len(doc1) != len(doc2):
-            return 0
-        return sum([x * y for x, y in zip(doc1, doc2)])
+        temp_sum = 0
+        for word in query.split(" "):
+            temp_sum += self._get_query_frequency(word, query) ** 2
+
+        magnitude = pow(temp_sum, 0.5)
+        if not magnitude:
+            magnitude = 1
+
+        result_sum = 0.0
+        for term in self.base_provider.get_terms_iterator():
+            count = 0
+            for word in query.split():
+                if word == term:
+                    count += 1
+
+            result_sum += (
+                self.get_term_frequency(file_name, term)
+                * self.get_inverce_term_frequency(term) ** 2
+                * (count / magnitude)
+            )
+
+        return result_sum
 
     def _get_rank(self, result_files, query) -> list:
-
-        vectors = self._make_vectors_for_query(result_files)
-        queryVec = self._query_vecor(query)
         results = [
-            [self._product(vectors[result], queryVec), result]
-            for result in result_files
+            [self._product(result, query), result] for result in result_files
         ]
-        results.sort(key=lambda x: x[0])
+        results.sort(key=lambda x: x[0], reverse=True)
+
         results = [x[1] for x in results]
         return results

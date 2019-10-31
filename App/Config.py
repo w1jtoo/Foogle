@@ -24,4 +24,6 @@ class Config:
         return []
 
     def get_general_path(self) -> str:
-        return path.abspath(str(Path.home()) + "\\.foogle")
+        return path.abspath(
+            path.join(str(Path.home()) + "/.foogle")
+            )
