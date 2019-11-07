@@ -1,7 +1,7 @@
 import os
 
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
-from Foogle import Foogle
+from foogle import Foogle
 
 FILES_DIR = os.path.abspath("Tests/environment/files")
 DATEBASE = os.path.abspath("Tests/environment/foogletempbase.db")

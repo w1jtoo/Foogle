@@ -2,12 +2,15 @@ import threading
 
 
 class Terminal(object):
-    def __init__(self, *args, **kwargs):
-        self.objects = []
+    __instance = None
 
-    def initialize_thread(self):
-        t = threading.Thread(target=self.loop)
-        t.start()
+    def __new__(cls, *args, **kwargs):
+        if not isinstance(cls.__instance, cls):
+            cls.__instance = object.__new__(cls, *args, **kwargs)
+        return cls.__instance
+
+    def sprint(self, string: str) -> None:
+        print(string)
 
     def loop(self):
         pass
