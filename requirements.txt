@@ -4,5 +4,6 @@
 ###### Requirements without Version Specifiers ######
 argparse
 chardet
+tqdm
 #
 #

@@ -4,10 +4,12 @@ import math
 import sqlite3
 from chardet import UniversalDetector
 from typing import List
+from App.Common.utils import detect_encoding, get_total_lenght
 from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
+from App.Terminal.Terminal import Terminal
 
 
-CLEANING_PATTERN = re.compile(r"[\d\w].*[\d\w]?")
+CLEANING_PATTERN = re.compile(r"[\d\w].*[\d\w]")
 
 
 class ReverceIndexBuilder:
@@ -17,34 +19,32 @@ class ReverceIndexBuilder:
 
     def compile(self):
         self._builder_init()
-
         self._inialize_stats()
+        Terminal().print_state()
 
     def _builder_init(self):
         # there is some optimization
         # so we can do it in 2o(nl) instead of 3o(nl)
         pattern = re.compile(r"[\W_]+")
         unique_terms_count = 1
-        lines_count = 1
+
+        Terminal().set_progress_bar(get_total_lenght(self.files))
+
         for fname in self.files:
             path_terms_count = 1
             position = 0
-            encoding = self.base_provider.get_encoding(fname)
-
+            encoding = detect_encoding(fname)
             if encoding == "NULL":
-                print(f"Can't load file encoding: '{fname}'")
                 continue
 
             f = open(fname, "r", encoding=encoding)
             while 1:
                 line = f.readline().lower()
-                lines_count += 1
+                Terminal().progress_bar.update(1)
                 if not line:
                     break
-                # TODO do smth with word
-                for word in line.split():
+                for word in line.split(' '):
                     word = CLEANING_PATTERN.search(word)
-
                     if word:
                         word = word.group(0)
                     else:
@@ -88,6 +88,8 @@ class ReverceIndexBuilder:
             self.base_provider.commit()
             f.close()
 
+        Terminal().progress_bar.close()
+
     def set_term_frequency(self) -> None:
         for term, path in self.base_provider.get_terms_paths_iterator():
             count_of_term = self.base_provider.select_count(
@@ -109,6 +111,7 @@ class ReverceIndexBuilder:
             self.base_provider.insert_into(
                 DateBase.TF, path, term, count_of_term / total_term_count
             )
+            Terminal().progress_bar.update()
         self.base_provider.commit()
 
     def set_inverce_frequency(self) -> None:
@@ -127,6 +130,7 @@ class ReverceIndexBuilder:
             self.base_provider.insert_into(
                 DateBase.IDF, term, math.log(len(self.files) / document_count)
             )
+            Terminal().progress_bar.update()
         self.base_provider.commit()
 
     def get_positions_in_file(self, word: str, path: str) -> list:
@@ -140,8 +144,14 @@ class ReverceIndexBuilder:
         return [path[0] for path in positions]
 
     def _inialize_stats(self):
+        Terminal().sprint("Start filling in IDF-TF datebases.")
+        Terminal().set_progress_bar(
+             self.base_provider.get_terms_and_paths_count() + 
+             self.base_provider.get_terms_count()
+        )
         self.set_inverce_frequency()
         self.set_term_frequency()
+        Terminal().progress_bar.close()
 
     def get_static_query(self, string: str, ranking: bool) -> list:
         string = string.lower()
