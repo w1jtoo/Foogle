@@ -14,8 +14,7 @@ class DateBase(enum.Enum):
     INDEX = 1
     TF = 2
     IDF = 3
-    ENCODING = 4
-    SQLITE_MASTER = 5
+    SQLITE_MASTER = 4
 
     def __str__(self):
         if self is DateBase.SQLITE_MASTER:
@@ -71,28 +70,15 @@ class BaseProvider:
         )
         self._connection.commit()
 
-    def initalize_file_encoding(self) -> None:
-        """ Initialize base with file and it's encoding.
-
-        View:
-        | id | path | encoding | 
-        """
-        self._cursor.execute(
-            f"CREATE TABLE {DateBase.ENCODING} ( ID INTEGER PRIMARY KEY AUTOINCREMENT, path text, encoding text )"
-        )
-        self._connection.commit()
-
-    def add_encoding_file(self, path: str, encoding: str) -> None:
-        self._cursor.execute(
-            f"INSERT INTO {DateBase.ENCODING} (path, encoding) VALUES ( '{path}', '{encoding}')"
-        )
-        self._connection.commit()
 
     def get_terms_paths_iterator(self) -> Iterator:
         """ Returns iterator that iterable by pair of word and path"""
         return TermsPathsItermator(self)
 
     def get_terms_count(self) -> int:
+        return len(TermsItermator(self))
+
+    def get_terms_and_paths_count(self) -> int:
         return len(TermsPathsItermator(self))
 
     def get_terms_iterator(self) -> Iterator:
@@ -173,18 +159,8 @@ class BaseProvider:
             idf = idf[0] == str(DateBase.IDF)
         else:
             return False
-        encode = self.select_one(
-            DateBase.SQLITE_MASTER,
-            select_params="name",
-            where=f"type = 'table' AND name=?",
-            where_params=(str(DateBase.ENCODING),),
-        )
-        if encode:
-            encode = encode[0] == str(DateBase.ENCODING)
-        else:
-            return False
 
-        return bool(encode and idf and tf and index)
+        return bool(idf and tf and index)
 
     def select_all(
         self, base: DateBase, where="", select_params="*", where_params=()
@@ -258,9 +234,6 @@ class BaseProvider:
 
         return self._cursor.fetchone()
 
-    def get_files(self) -> list:
-        files = self.select_all(DateBase.ENCODING, select_params="path")
-        return [f[0] for f in files]
 
     def insert_into(self, base: DateBase, *values) -> None:
         """ Insert into table values.
@@ -283,14 +256,19 @@ class BaseProvider:
             self._connection.commit()
             return
         self._cursor.execute(
-            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})", values
+            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})",
+            values,
         )
 
     def commit(self) -> None:
         self._connection.commit()
 
     def select_distinct(
-        self, date_base: DateBase, where="", distinct_params="*", where_params=()
+        self,
+        date_base: DateBase,
+        where="",
+        distinct_params="*",
+        where_params=(),
     ) -> list:
         """ Select unique tuples of something in DateBase. Equivalent of SQL's SELECT DISTINCT...
 
@@ -322,18 +300,6 @@ class BaseProvider:
 
         return self._cursor.fetchall()
 
-    def get_encoding(self, file_name: str) -> str:
-        """Return encoding of file
-        """
-        encoding = self.select_one(
-            DateBase.ENCODING,
-            where=f"path = ?",
-            where_params=(file_name,),
-            select_params="encoding",
-        )
-        if not encoding:
-            return "UTF-8"
-        return encoding[0]
 
     def __enter__(self):
         # TODO create good solution of this problem
@@ -343,8 +309,7 @@ class BaseProvider:
         self._connection.close()
 
     def drop_tables(self) -> None:
-        """Drop index, idf, tf and encoding table."""
-        self.drop_table(DateBase.ENCODING)
+        """Drop index, idf, tf tables."""
         self.drop_table(DateBase.IDF)
         self.drop_table(DateBase.TF)
         self.drop_table(DateBase.INDEX)
@@ -352,7 +317,6 @@ class BaseProvider:
     def recompile(self) -> None:
         """Drop existing tables and creates new ones. """
         self.drop_tables()
-        self.initalize_file_encoding()
         self.initalize_idf_base()
         self.initalize_tf_base()
         self.initialize_index_base()
@@ -365,6 +329,14 @@ class TermsPathsItermator:
     def __iter__(self):
         self._counter = 1
         return self
+
+    def __len__(self):
+        raw_result = self._provider.select_one(
+            select_params="MAX(upt_id)", 
+            base=DateBase.INDEX,
+        )
+        if raw_result: return raw_result[0]
+        else: return 0
 
     def __next__(self):
         result = self._provider.select_one(
@@ -389,7 +361,12 @@ class TermsItermator:
         return self
 
     def __len__(self):
-        return self._provider.select_count(DateBase.INDEX)
+        raw_result =  self._provider.select_one(
+            select_params="MAX(uterm_id)",
+            base=DateBase.INDEX
+        )
+        if raw_result: return raw_result[0]
+        else: return 0
 
     def __next__(self):
         result = self._provider.select_one(
