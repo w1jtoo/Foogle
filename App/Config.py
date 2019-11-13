@@ -1,5 +1,5 @@
-from pathlib import Path
 from os import path
+from pathlib import Path
 
 
 class Config:
@@ -24,6 +24,7 @@ class Config:
         return []
 
     def get_general_path(self) -> str:
-        return path.abspath(
-            path.join(str(Path.home()) + "/.foogle")
-            )
+        return path.abspath(path.join(str(Path.home()) + "/.foogle"))
+
+    def get_logger_name(self) -> str:
+        return "FoogleLog.log"

@@ -26,7 +26,6 @@ class BaseProvider:
     # TODO I should use Date Base normalization but nowdays it's to time expensive for me
     def __init__(self, db_path: str):
         """"""
-        print(db_path)
         self._db_name = db_path
         self._connection = sqlite3.connect(self._db_name)
         self._cursor = self._connection.cursor()
@@ -69,7 +68,6 @@ class BaseProvider:
             f"CREATE TABLE {DateBase.IDF} (id INTEGER PRIMARY KEY AUTOINCREMENT, term text, idf real)"
         )
         self._connection.commit()
-
 
     def get_terms_paths_iterator(self) -> Iterator:
         """ Returns iterator that iterable by pair of word and path"""
@@ -234,7 +232,6 @@ class BaseProvider:
 
         return self._cursor.fetchone()
 
-
     def insert_into(self, base: DateBase, *values) -> None:
         """ Insert into table values.
 
@@ -300,7 +297,6 @@ class BaseProvider:
 
         return self._cursor.fetchall()
 
-
     def __enter__(self):
         # TODO create good solution of this problem
         return self
@@ -321,6 +317,15 @@ class BaseProvider:
         self.initalize_tf_base()
         self.initialize_index_base()
 
+    from typing import List
+
+    def get_files(self) -> List:
+        result = self.select_distinct(DateBase.INDEX, distinct_params="path")
+        if result:
+            return [path[0] for path in result]
+        else:
+            return []
+
 
 class TermsPathsItermator:
     def __init__(self, provider: BaseProvider):
@@ -332,11 +337,12 @@ class TermsPathsItermator:
 
     def __len__(self):
         raw_result = self._provider.select_one(
-            select_params="MAX(upt_id)", 
-            base=DateBase.INDEX,
+            select_params="MAX(upt_id)", base=DateBase.INDEX
         )
-        if raw_result: return raw_result[0]
-        else: return 0
+        if raw_result:
+            return raw_result[0]
+        else:
+            return 0
 
     def __next__(self):
         result = self._provider.select_one(
@@ -361,12 +367,13 @@ class TermsItermator:
         return self
 
     def __len__(self):
-        raw_result =  self._provider.select_one(
-            select_params="MAX(uterm_id)",
-            base=DateBase.INDEX
+        raw_result = self._provider.select_one(
+            select_params="MAX(uterm_id)", base=DateBase.INDEX
         )
-        if raw_result: return raw_result[0]
-        else: return 0
+        if raw_result:
+            return raw_result[0]
+        else:
+            return 0
 
     def __next__(self):
         result = self._provider.select_one(
