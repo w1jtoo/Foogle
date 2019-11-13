@@ -32,9 +32,12 @@ class Terminal(object):
 
     def print_state(self) -> None:
         if self.__broken_files:
-            self.sprint(f"Can't detect encoding of next {len(self.__broken_files)} files : ")
+            self.sprint(
+                f"Can't detect encoding of next {len(self.__broken_files)} files : "
+            )
             if 0 < len(self.__broken_files) < 5:
-                for _file in self.__broken_files: self.sprint(f"    {_file}") 
+                for _file in self.__broken_files:
+                    self.sprint(f"    {_file}")
             else:
                 self.sprint("\n".join(self.__broken_files[0:5]))
 

@@ -1,5 +1,9 @@
 from App.FoogleEngine.ReverceIndexBuilder import ReverceIndexBuilder
-from App.Common.DateBase.BaseProvider import BaseProvider, DateBase, TermsPathsItermator
+from App.Common.DateBase.BaseProvider import (
+    BaseProvider,
+    DateBase,
+    TermsPathsItermator,
+)
 from Tests.TestUtils import DateBaseEntity
 
 from App.Common.utils import get_files, filter_files

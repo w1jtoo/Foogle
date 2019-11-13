@@ -31,22 +31,25 @@ def filter_files(files: list, types: list, extention_types=[]) -> List[str]:
 
     return result
 
+
 def detect_encoding(file_name: str) -> str:
-		u = UniversalDetector()
-		encoding = "NULL"
-		with open(file_name, "rb") as f:
-			for line in f.readlines():
-				u.feed(line)
-		u.close()
-		if u.result["encoding"]:
-			encoding = u.result["encoding"]
-		return encoding
+    u = UniversalDetector()
+    encoding = "NULL"
+    with open(file_name, "rb") as f:
+        for line in f.readlines():
+            u.feed(line)
+    u.close()
+    if u.result["encoding"]:
+        encoding = u.result["encoding"]
+    return encoding
+
 
 def get_total_lenght(files: str) -> int:
     result = 0
     for fname in files:
         encoding = detect_encoding(fname)
-        if encoding == "NULL": continue
+        if encoding == "NULL":
+            continue
         with open(fname, "r", encoding=encoding) as f:
             result += len(f.readlines())
     return result

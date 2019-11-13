@@ -1,13 +1,16 @@
+import logging
+import math
 import os
 import re
-import math
 import sqlite3
-from chardet import UniversalDetector
 from typing import List
-from App.Common.utils import detect_encoding, get_total_lenght
-from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
-from App.Terminal.Terminal import Terminal
 
+from chardet import UniversalDetector
+from logdecorator import log_exception, log_on_end, log_on_error, log_on_start
+
+from App.Common.DateBase.BaseProvider import BaseProvider, DateBase
+from App.Common.utils import detect_encoding, get_total_lenght
+from App.Terminal.Terminal import Terminal
 
 CLEANING_PATTERN = re.compile(r"[\d\w].*[\d\w]")
 
@@ -17,11 +20,19 @@ class ReverceIndexBuilder:
         self.base_provider = base_provider
         self.files = files
 
+    @log_on_error(
+        logging.ERROR,
+        "Error on filling up {e!r}",
+        on_exceptions=Exception,
+        reraise=True,
+    )
     def compile(self):
         self._builder_init()
         self._inialize_stats()
         Terminal().print_state()
 
+    @log_on_start(logging.DEBUG, "IDEX table filling up...")
+    @log_on_end(logging.DEBUG, "INDEX table filled up successfully!")
     def _builder_init(self):
         # there is some optimization
         # so we can do it in 2o(nl) instead of 3o(nl)
@@ -43,7 +54,7 @@ class ReverceIndexBuilder:
                 Terminal().progress_bar.update(1)
                 if not line:
                     break
-                for word in line.split(' '):
+                for word in line.split(" "):
                     word = CLEANING_PATTERN.search(word)
                     if word:
                         word = word.group(0)
@@ -116,9 +127,7 @@ class ReverceIndexBuilder:
 
     def set_inverce_frequency(self) -> None:
         # CAN BE OPTIMIZED
-
         # get unique term list
-
         for term in self.base_provider.get_terms_iterator():
             document_count = self.base_provider.select_count(
                 DateBase.INDEX,
@@ -143,11 +152,13 @@ class ReverceIndexBuilder:
         )
         return [path[0] for path in positions]
 
+    @log_on_start(logging.DEBUG, "TF-IDF tables filling up...")
+    @log_on_end(logging.DEBUG, "TF-IDF tables filled up successfully!")
     def _inialize_stats(self):
-        Terminal().sprint("Start filling in IDF-TF datebases.")
+        Terminal().sprint("Start filling in IDF-TF tables.")
         Terminal().set_progress_bar(
-             self.base_provider.get_terms_and_paths_count() + 
-             self.base_provider.get_terms_count()
+            self.base_provider.get_terms_and_paths_count()
+            + self.base_provider.get_terms_count()
         )
         self.set_inverce_frequency()
         self.set_term_frequency()
