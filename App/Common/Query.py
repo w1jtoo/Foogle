@@ -1,6 +1,9 @@
 import operator
 from typing import Any, Iterable, List, Optional, Set
 
+from logdecorator import log_on_end, log_on_error, log_on_start
+import logging
+
 
 class Query:
     prefix_operators = {"!": 3, "not": 3}
@@ -70,6 +73,14 @@ class Query:
 
         self.total_set = total_set
 
+    @log_on_start(logging.DEBUG, "Covert to postfix notation. ")
+    @log_on_error(
+        logging.ERROR,
+        "Error on converting {e!r}",
+        on_exceptions=Exception,
+        reraise=True,
+    )
+    @log_on_end(logging.DEBUG, "Postfix notation was made successfully!")
     def _convert_to_postfix(self) -> str:
         stack = []
         result = []
@@ -126,6 +137,16 @@ class Query:
 
         return result
 
+    @log_on_start(
+        logging.DEBUG, "Execute postfix expression [{postfix:s}] ..."
+    )
+    @log_on_error(
+        logging.ERROR,
+        "Something with postfix expression {e!r}",
+        on_exceptions=Exception,
+        reraise=True,
+    )
+    @log_on_end(logging.DEBUG, "Executed successfully!")
     def _culculate(self, postfix: str, method) -> Optional[set]:
         stack: List[Any] = []
         queue = postfix.split()

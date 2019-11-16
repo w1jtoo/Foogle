@@ -1,8 +1,11 @@
 import os
+import re
 import time
 from mimetypes import guess_type, types_map
 from typing import List
+
 from chardet import UniversalDetector
+
 from App.Terminal.Terminal import Terminal
 
 
@@ -16,18 +19,20 @@ def get_files(path_name: str) -> List[str]:
 
 def filter_files(files: list, types: list, extention_types=[]) -> List[str]:
     result: List[str] = []
-    _types = []
+    _types = set()
 
     for _type in extention_types:
         if _type in types_map:
-            _types.append(types_map[_type])
+            _types.add(types_map[_type])
         else:
-            print(f"Can't recognize what type is '{_type}'")
-
+            Terminal().sprint(f"Can't recognize what type is '{_type}'")
+    all_types = set(types) | _types
     for _file in files:
         guessed = guess_type(_file)[0]
-        if guessed in _types or guessed in types:
-            result.append(os.path.abspath(_file))
+        if guessed:
+            for _type in all_types:
+                if re.findall(_type, guessed):
+                    result.append(os.path.abspath(_file))
 
     return result
 

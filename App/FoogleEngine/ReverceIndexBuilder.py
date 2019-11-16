@@ -49,7 +49,7 @@ class ReverceIndexBuilder:
                 continue
 
             f = open(fname, "r", encoding=encoding)
-            while 1:
+            while True:
                 line = f.readline().lower()
                 Terminal().progress_bar.update(1)
                 if not line:

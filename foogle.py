@@ -24,9 +24,14 @@ class Foogle:
 
     def initialize_logger(self) -> None:
         file_name = os.path.join(
-            self.get_config().get_general_path(),
-            self.get_config().get_logger_name(),
+            self.get_config().general_path, self.get_config().logging_file_name
         )
+        # creating new file
+        if not os.path.exists(self.get_config().general_path): 
+            os.mkdir(self.get_config().general_path)
+        if not os.path.exists(file_name):
+            f = open(file_name, "w")
+            f.close()
 
         logging.basicConfig(
             format="%(asctime)s - %(message)s",
@@ -54,23 +59,27 @@ class Foogle:
         self.create_datebase_directory(self.get_config().get_general_path())
         self.base_provider = BaseProvider(
             os.path.join(
-                self.get_config().get_general_path(),
-                self.get_config().get_date_base_name(),
+                self.get_config().general_path,
+                self.get_config().date_base_name,
             )
         )
         Terminal().sprint(f"Starting scaning {directory}...")
         files = filter_files(
-            get_files(directory), self.get_config().get_types()
+            get_files(directory),
+            self.get_config().types,
+            self.get_config().extention_types,
         )
         Terminal().sprint(f"Found {len(files)} files to build index in.")
+        if len(files):
+            self._index = ReverceIndexBuilder(files, self.base_provider)
 
-        self._index = ReverceIndexBuilder(files, self.base_provider)
+            self.base_provider.recompile()
+            Terminal().sprint("Start of reverce index building...")
+            self._index.compile()
 
-        self.base_provider.recompile()
-        Terminal().sprint("Start of reverce index building...")
-        self._index.compile()
-
-        Terminal().sprint("Base was compiled successfully")
+            Terminal().sprint("Base was compiled successfully")
+        else:
+            Terminal().sprint("No files to compile date base.")
 
     @log_on_start(
         logging.DEBUG,
@@ -92,8 +101,8 @@ class Foogle:
 
         if not date_base_directory:
             date_base_directory = os.path.join(
-                self.get_config().get_general_path(),
-                self.get_config().get_date_base_name(),
+                self.get_config().general_path,
+                self.get_config().date_base_name,
             )
 
         self.base_provider = BaseProvider(date_base_directory)

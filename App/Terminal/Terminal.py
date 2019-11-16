@@ -10,7 +10,7 @@ class Terminal(object):
     @property
     def progress_bar(self) -> tqdm:
         if not self.__progress_bar:
-            raise AttributeError
+            raise Exception("Using of progress bar before initialization.")
         return self.__progress_bar
 
     def set_progress_bar(self, lenght: int) -> None:

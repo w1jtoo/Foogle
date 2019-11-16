@@ -6,5 +6,6 @@ argparse
 chardet
 tqdm
 logdecorator
+pyyaml
 #
 #

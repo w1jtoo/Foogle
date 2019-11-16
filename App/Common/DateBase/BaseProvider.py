@@ -1,13 +1,14 @@
 # TODO replace it to cnfg file
 
-import sqlite3
 import enum
+import sqlite3
 
 # will work after python 3.9
 # see https://docs.pytest.org/en/latest/warnings.html
 from collections.abc import Iterator
 
 from App.Common.DateBase.SelectError import SelectError
+
 
 # TODO make linq
 class DateBase(enum.Enum):
@@ -86,7 +87,8 @@ class BaseProvider:
     def select_count(
         self, base: DateBase, where="", count_params="*", where_params=()
     ) -> int:
-        """ Select count of something in DateBase. Equivalent of SQL's SELECT COUNT...
+        """ Select count of something in DateBase.
+        Equivalent of SQL's SELECT COUNT...
 
         Parameters
         ----------
@@ -247,7 +249,9 @@ class BaseProvider:
         # make str values to it's format
         if base == DateBase.IDF:
             self._cursor.execute(
-                f"INSERT INTO {base} (term, idf) VALUES ({', '.join( [ '?' ] * len(values) )})",
+                f"INSERT INTO {base} \
+                     (term, idf) VALUES \
+                         ({', '.join( [ '?' ] * len(values) )})",
                 values,
             )
             self._connection.commit()
@@ -267,7 +271,8 @@ class BaseProvider:
         distinct_params="*",
         where_params=(),
     ) -> list:
-        """ Select unique tuples of something in DateBase. Equivalent of SQL's SELECT DISTINCT...
+        """ Select unique tuples of something in DateBase. 
+        Equivalent of SQL's SELECT DISTINCT...
 
         Parameters
         ----------
