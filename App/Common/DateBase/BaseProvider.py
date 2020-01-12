@@ -27,8 +27,8 @@ class BaseProvider:
     # TODO I should use Date Base normalization but nowdays it's to time expensive for me
     def __init__(self, db_path: str):
         """"""
-        self._db_name = db_path
-        self._connection = sqlite3.connect(self._db_name)
+        self.path = db_path
+        self._connection = sqlite3.connect(self.path)
         self._cursor = self._connection.cursor()
 
     def drop_table(self, base: DateBase) -> None:
@@ -79,6 +79,9 @@ class BaseProvider:
 
     def get_terms_and_paths_count(self) -> int:
         return len(TermsPathsItermator(self))
+
+    def get_paths_count(self) -> int:
+        return self.select_count(DateBase.INDEX, count_params="DISTINCT path",)
 
     def get_terms_iterator(self) -> Iterator:
         """ Returns iterator that iterable by words."""
@@ -257,19 +260,14 @@ class BaseProvider:
             self._connection.commit()
             return
         self._cursor.execute(
-            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})",
-            values,
+            f"INSERT INTO {base} VALUES ({', '.join( [ '?' ] * len(values) )})", values,
         )
 
     def commit(self) -> None:
         self._connection.commit()
 
     def select_distinct(
-        self,
-        date_base: DateBase,
-        where="",
-        distinct_params="*",
-        where_params=(),
+        self, date_base: DateBase, where="", distinct_params="*", where_params=(),
     ) -> list:
         """ Select unique tuples of something in DateBase. 
         Equivalent of SQL's SELECT DISTINCT...
