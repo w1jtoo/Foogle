@@ -5,7 +5,6 @@ from typing import Dict, Any
 
 
 class Config:
-    # TODO Connect serialization using Yaml
     __instance = None
     file_name = "foogle_config.yaml"
     __standart_entries: Dict[str, Any] = {
@@ -21,7 +20,6 @@ class Config:
             cls.__instance = object.__new__(cls, *args, **kwargs)
             with open(cls.file_name, "r") as f:
                 entries = yaml.safe_load(f)
-                # print(entries)
                 cls.__instance.cofig = entries.get("foogle")
         return cls.__instance
 

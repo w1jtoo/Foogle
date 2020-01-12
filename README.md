@@ -1,18 +1,34 @@
 # Foogle
 
-Foogle is Search Engine with Ranking writed in [Python](https://www.python.org/).
+The foogle is search engine with TF-IDF ranking written in [Python](https://www.python.org/).
+
+## Requirements
+
+  Install requirements:
+
+    python -m pip install -r requirements.txt
 
 ## Usage
 
-### To compile date base
+    python foogle.py --help
 
-    py foogle.py compile myfiles
+### Compile date base
 
-### To find files with words
+  First you need do this:
 
-    py foogle.py find myfiles "TODO and not DONE"
+    python foogle.py compile my_path
+  Will create and fill in sqlite date base and needful files.
 
-## Runking
+### Find files
+
+    python foogle.py find "some text"
+  Show what files contain phrases similar to _some text_.
+  Work with set theory operations: _and_, _or_ and _not_ (or C-like syntax _&_, _|_ and _!_)
+
+    python foogle.py find "!(Bob and Allice & Bacel) or def"
+  Show file without 'Bob', 'Allice' and 'Bacel' and files with word 'def'
+
+## Ranking
 
 Use typical [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) ranking. Where:
 
@@ -27,14 +43,11 @@ IDF:
 
 ![ref](LATEXfiles/comments.gif)
 
-
 <!-- $$F_\text{inversed}(t) =\log_2{|\{f\in S_\text{files}\}|\over|\{d\in D: g(t)= g(d) \}|}. -->
 <!-- .$$ -->
 <!-- $$\text{Where } g\text{ returns it's file by term.}$$ -->
 
-Support search operators: _not_, _or_, _and_.
-
-Support config file:
+## Configration file
 
 ```yaml
 foogle:
@@ -49,3 +62,5 @@ foogle:
     - .doc
   general_path:
 ```
+
+  Support types from mimetypes lib, watch [this](https://docs.python.org/2/library/mimetypes.html).
