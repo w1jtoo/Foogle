@@ -36,7 +36,6 @@ class ReverceIndexBuilder:
     def _builder_init(self):
         # there is some optimization
         # so we can do it in 2o(nl) instead of 3o(nl)
-        pattern = re.compile(r"[\W_]+")
         unique_terms_count = 1
 
         Terminal().set_progress_bar(get_total_lenght(self.files))
@@ -54,7 +53,7 @@ class ReverceIndexBuilder:
                 Terminal().progress_bar.update(1)
                 if not line:
                     break
-                for word in line.split(" "):
+                for word in re.split(r"\W+", line):
                     word = CLEANING_PATTERN.search(word)
                     if word:
                         word = word.group(0)

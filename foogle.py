@@ -27,7 +27,7 @@ class Foogle:
             self.get_config().general_path, self.get_config().logging_file_name
         )
         # creating new file
-        if not os.path.exists(self.get_config().general_path): 
+        if not os.path.exists(self.get_config().general_path):
             os.mkdir(self.get_config().general_path)
         if not os.path.exists(file_name):
             f = open(file_name, "w")
@@ -40,9 +40,6 @@ class Foogle:
             level=logging.DEBUG,
         )
         logging.info("logger initialization")
-
-    def init_container(self):
-        pass
 
     def get_config(self) -> Config:
         return Config()
@@ -59,8 +56,7 @@ class Foogle:
         self.create_datebase_directory(self.get_config().get_general_path())
         self.base_provider = BaseProvider(
             os.path.join(
-                self.get_config().general_path,
-                self.get_config().date_base_name,
+                self.get_config().general_path, self.get_config().date_base_name,
             )
         )
         Terminal().sprint(f"Starting scaning {directory}...")
@@ -82,8 +78,7 @@ class Foogle:
             Terminal().sprint("No files to compile date base.")
 
     @log_on_start(
-        logging.DEBUG,
-        "Starting '{query:s}' searching with ranking:{ranking:b}...",
+        logging.DEBUG, "Starting '{query:s}' searching with ranking:{ranking:b}...",
     )
     @log_on_error(
         logging.ERROR,
@@ -101,8 +96,7 @@ class Foogle:
 
         if not date_base_directory:
             date_base_directory = os.path.join(
-                self.get_config().general_path,
-                self.get_config().date_base_name,
+                self.get_config().general_path, self.get_config().date_base_name,
             )
 
         self.base_provider = BaseProvider(date_base_directory)
@@ -151,14 +145,10 @@ if __name__ == "__main__":
         help="find withought ranking (default: ranking request)",
     )
 
-    find.add_argument(
-        "query", nargs="+", help="Words that will be found.", type=str
-    )
+    find.add_argument("query", nargs="+", help="Words that will be found.", type=str)
 
     _compile = subprasers.add_parser("compile", help="Compile query base.")
-    _compile.add_argument(
-        "dir", help="Directory where query will be done.", type=str
-    )
+    _compile.add_argument("dir", help="Directory where query will be done.", type=str)
 
     args = parser.parse_args()
     foogle = Foogle(parser)
