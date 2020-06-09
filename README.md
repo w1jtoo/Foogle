@@ -47,7 +47,7 @@ IDF:
 <!-- .$$ -->
 <!-- $$\text{Where } g\text{ returns it's file by term.}$$ -->
 
-## Configration file
+## Configuration file
 
 ```yaml
 foogle:
