@@ -12,12 +12,12 @@ The foogle is search engine with TF-IDF ranking written in [Python](https://www.
 
     python foogle.py --help
 
-### Compile date base
+### Compile data base
 
   First you need do this:
 
     python foogle.py compile my_path
-  Will create and fill in sqlite date base and needful files.
+  Will create and fill in sqlite data base and needful files.
 
 ### Find files
 
